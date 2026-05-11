@@ -14,6 +14,8 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import com.nexora.core.content.entity.Comment;
+import com.nexora.core.content.repository.CommentRepository;
 import com.nexora.core.graphql.dto.CommentThreadView;
 import com.nexora.core.graphql.dto.FeedAuthorView;
 import com.nexora.core.graphql.dto.FeedPostView;
@@ -27,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class FeedQueryService {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final CommentRepository commentRepository;
     private final SecurityService securityService;
     private static final List<String> TAG_COLUMN_CANDIDATES = List.of("tag", "tag_name", "tags", "name");
     
@@ -149,40 +152,26 @@ public class FeedQueryService {
     }
 
     public List<CommentThreadView> obtenerHilosComentarios(UUID postId) {
-        String sql = """
-                SELECT
-                    c.id,
-                    c.post_id,
-                    c.parent_id,
-                    c.autor_id,
-                    c.content AS contenido,
-                    c.created_at
-                FROM comentarios c
-                WHERE c.post_id = :postId
-                ORDER BY c.created_at ASC
-                """;
-
-        MapSqlParameterSource params = new MapSqlParameterSource().addValue("postId", postId);
-
         try {
-            List<CommentThreadView> comentarios = jdbcTemplate.query(sql, params, (rs, rowNum) -> {
-                Timestamp rawCreatedAt = rs.getTimestamp("created_at");
-                return new CommentThreadView(
-                        rs.getObject("id", UUID.class),
-                        rs.getObject("post_id", UUID.class),
-                        rs.getObject("parent_id", UUID.class),
-                        rs.getObject("autor_id", UUID.class),
-                        rs.getString("contenido"),
-                        rawCreatedAt != null ? rawCreatedAt.toLocalDateTime().atOffset(ZoneOffset.UTC) : null);
-            });
+            List<Comment> comentarios = commentRepository.findByPost_IdOrderByCreatedAtAsc(postId);
+
+            List<CommentThreadView> comentariosViews = comentarios.stream()
+                    .map(comment -> new CommentThreadView(
+                            comment.getId(),
+                            comment.getPost().getId(),
+                            comment.getParent() != null ? comment.getParent().getId() : null,
+                            comment.getAutor().getId(),
+                            comment.getContent(),
+                            comment.getCreatedAt() != null ? comment.getCreatedAt().atOffset(ZoneOffset.UTC) : null))
+                    .toList();
 
             Map<UUID, CommentThreadView> porId = new HashMap<>();
-            for (CommentThreadView comentario : comentarios) {
+            for (CommentThreadView comentario : comentariosViews) {
                 porId.put(comentario.id(), comentario);
             }
 
             List<CommentThreadView> raices = new ArrayList<>();
-            for (CommentThreadView comentario : comentarios) {
+            for (CommentThreadView comentario : comentariosViews) {
                 UUID parentId = comentario.parentId();
                 if (parentId != null && porId.containsKey(parentId)) {
                     porId.get(parentId).respuestas().add(comentario);

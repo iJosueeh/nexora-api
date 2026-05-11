@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 
 import com.nexora.core.graphql.dto.CommentThreadView;
@@ -51,6 +52,11 @@ public class        NexoraQueryController {
     @QueryMapping
     public List<CommentThreadView> comentariosPorPost(@Argument UUID postId) {
         return feedQueryService.obtenerHilosComentarios(postId);
+    }
+
+    @SchemaMapping(typeName = "CommentThread", field = "respuestas")
+    public List<CommentThreadView> respuestas(CommentThreadView commentThread) {
+        return commentThread.respuestas();
     }
 
     @QueryMapping
