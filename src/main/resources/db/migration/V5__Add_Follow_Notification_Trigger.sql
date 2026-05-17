@@ -22,8 +22,10 @@ FOR EACH ROW EXECUTE FUNCTION notify_on_follow();
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
-        ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
-    EXCEPTION WHEN others THEN
-        -- Si ya está en la publicación o hay error de permisos, ignorar
+        BEGIN
+            ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+        EXCEPTION WHEN others THEN
+            -- Si ya está en la publicación o hay error de permisos, ignorar
+        END;
     END IF;
 END $$;
