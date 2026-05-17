@@ -161,10 +161,19 @@ class GraphQlQueriesIntegrationTest {
         reply.setContent("Respuesta hija");
         reply = commentRepository.save(reply);
 
+        Comment replyLevel2 = new Comment();
+        replyLevel2.setPost(post);
+        replyLevel2.setAutor(author);
+        replyLevel2.setParent(reply);
+        replyLevel2.setContent("Respuesta nieta");
+        replyLevel2 = commentRepository.save(replyLevel2);
+
         jdbcTemplate.update("UPDATE comentarios SET created_at = ? WHERE id = ?",
                 Timestamp.valueOf(LocalDateTime.of(2026, 1, 2, 11, 0, 0)), root.getId());
         jdbcTemplate.update("UPDATE comentarios SET created_at = ? WHERE id = ?",
                 Timestamp.valueOf(LocalDateTime.of(2026, 1, 2, 11, 1, 0)), reply.getId());
+        jdbcTemplate.update("UPDATE comentarios SET created_at = ? WHERE id = ?",
+                Timestamp.valueOf(LocalDateTime.of(2026, 1, 2, 11, 2, 0)), replyLevel2.getId());
 
         String query = """
                 query {
@@ -172,6 +181,9 @@ class GraphQlQueriesIntegrationTest {
                     contenido
                     respuestas {
                       contenido
+                                                                                        respuestas {
+                                                                                                contenido
+                                                                                        }
                     }
                   }
                 }
@@ -185,7 +197,8 @@ class GraphQlQueriesIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.errors").doesNotExist())
                 .andExpect(jsonPath("$.data.comentariosPorPost[0].contenido").value("Comentario raiz"))
-                .andExpect(jsonPath("$.data.comentariosPorPost[0].respuestas[0].contenido").value("Respuesta hija"));
+                .andExpect(jsonPath("$.data.comentariosPorPost[0].respuestas[0].contenido").value("Respuesta hija"))
+                .andExpect(jsonPath("$.data.comentariosPorPost[0].respuestas[0].respuestas[0].contenido").value("Respuesta nieta"));
     }
 
     @Test
