@@ -77,6 +77,27 @@ class UniversityEventServiceImplTest {
     }
 
     @Test
+    void confirmRSVP_AlreadyRegistered_DifferentReferenceSameId_ThrowsException() {
+        User existingUser = new User();
+        existingUser.setId(userId);
+        event.getAttendees().add(existingUser);
+        
+        User anotherUserRef = new User();
+        anotherUserRef.setId(userId);
+
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(anotherUserRef));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            eventService.confirmRSVP(eventId, userId);
+        });
+
+        assertEquals("Ya estás registrado en este evento", exception.getMessage());
+        verify(eventRepository, never()).save(any());
+    }
+
+
+    @Test
     void confirmRSVP_EventNotFound_ThrowsException() {
         when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
 

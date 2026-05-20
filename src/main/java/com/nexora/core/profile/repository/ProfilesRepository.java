@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import com.nexora.core.profile.entity.Profiles;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,6 +14,8 @@ import java.util.UUID;
 public interface ProfilesRepository extends JpaRepository<Profiles, UUID> {
 
     Profiles findByUser_Id(UUID id);
+
+    List<Profiles> findByUser_IdIn(List<UUID> userIds);
 
     Optional<Profiles> findByUsernameIgnoreCase(String username);
 
