@@ -35,6 +35,9 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
     long countByFollower(User follower);
     long countByFollowing(User following);
 
+    @Query("SELECT f.following.id FROM Follow f WHERE f.follower.id = :followerId AND f.following.id IN :followingIds")
+    List<UUID> findFollowingIdsByFollowerIdAndFollowingIdsIn(UUID followerId, List<UUID> followingIds);
+
     @Modifying
     @Query("DELETE FROM Follow f WHERE f.follower.id = :followerId AND f.following.id = :followingId")
     void deleteByFollowerIdAndFollowingId(UUID followerId, UUID followingId);

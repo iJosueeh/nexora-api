@@ -48,7 +48,9 @@ public class UniversityEventServiceImpl implements UniversityEventService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        if (event.getAttendees().contains(user)) {
+        boolean alreadyRegistered = event.getAttendees().stream()
+                .anyMatch(u -> u.getId().equals(userId));
+        if (alreadyRegistered) {
             throw new RuntimeException("Ya estás registrado en este evento");
         }
 
