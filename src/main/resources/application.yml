@@ -11,9 +11,11 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 3
-      minimum-idle: 1
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
       connection-timeout: 20000
+      max-lifetime: 1200000
 
   jpa:
     hibernate:
@@ -22,6 +24,10 @@ spring:
     properties:
       hibernate:
         "[format_sql]": false
+
+  flyway:
+    baseline-on-migrate: true
+    enabled: true
 
   jackson:
     serialization:
@@ -61,7 +67,7 @@ logging:
 
 app:
   docs:
-    public-enabled: ${APP_DOCS_PUBLIC_ENABLED:false}
+    public-enabled: ${APP_DOCS_PUBLIC_ENABLED:true}
   graphql:
     public-enabled: ${APP_GRAPHQL_PUBLIC_ENABLED:true}
   cors:

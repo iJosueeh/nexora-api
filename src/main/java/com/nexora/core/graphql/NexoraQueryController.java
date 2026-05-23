@@ -5,11 +5,13 @@ import java.util.UUID;
 
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 
 import com.nexora.core.graphql.dto.CommentThreadView;
 import com.nexora.core.graphql.dto.FeedPostView;
 import com.nexora.core.graphql.dto.TagSuggestionView;
+import com.nexora.core.graphql.dto.TrendingTopicView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +23,18 @@ public class        NexoraQueryController {
     private static final int MAX_TAG_LIMIT = 30;
 
     private final FeedQueryService feedQueryService;
+
+    private final com.nexora.core.content.services.SocialService socialService;
+
+    @QueryMapping
+    public List<com.nexora.core.graphql.dto.ProfileView> followers(@Argument UUID userId) {
+        return socialService.getFollowers(userId);
+    }
+
+    @QueryMapping
+    public List<com.nexora.core.graphql.dto.ProfileView> following(@Argument UUID userId) {
+        return socialService.getFollowing(userId);
+    }
 
     @QueryMapping
     public String health() {
@@ -53,10 +67,21 @@ public class        NexoraQueryController {
         return feedQueryService.obtenerHilosComentarios(postId);
     }
 
+    @SchemaMapping(typeName = "CommentThread", field = "respuestas")
+    public List<CommentThreadView> respuestas(CommentThreadView commentThread) {
+        return commentThread.respuestas();
+    }
+
     @QueryMapping
     public List<TagSuggestionView> availableTags(@Argument String search, @Argument Integer limit) {
         int safeLimit = limit == null ? 12 : Math.max(1, Math.min(limit, MAX_TAG_LIMIT));
         String safeSearch = search == null ? "" : search.trim().toLowerCase();
         return feedQueryService.obtenerTagsDisponibles(safeSearch, safeLimit);
+    }
+
+    @QueryMapping
+    public List<TrendingTopicView> trendingTopics(@Argument Integer limit) {
+        int safeLimit = limit == null ? 10 : Math.max(1, Math.min(limit, 50));
+        return feedQueryService.obtenerTrendingTopics(safeLimit);
     }
 }

@@ -1,0 +1,44 @@
+package com.nexora.core.content.repository;
+
+import com.nexora.core.content.entity.Follow;
+import com.nexora.core.user.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface FollowRepository extends JpaRepository<Follow, UUID> {
+    
+    @Query("SELECT f FROM Follow f WHERE f.follower.id = :followerId AND f.following.id = :followingId")
+    Optional<Follow> findByFollowerIdAndFollowingId(UUID followerId, UUID followingId);
+
+    @Query("SELECT COUNT(f) > 0 FROM Follow f WHERE f.follower.id = :followerId AND f.following.id = :followingId")
+    boolean existsByFollowerIdAndFollowingId(UUID followerId, UUID followingId);
+
+    @Query("SELECT COUNT(f) FROM Follow f WHERE f.follower.id = :followerId")
+    long countByFollowerId(UUID followerId);
+
+    @Query("SELECT COUNT(f) FROM Follow f WHERE f.following.id = :followingId")
+    long countByFollowingId(UUID followingId);
+
+    @Query("SELECT f.follower FROM Follow f WHERE f.following.id = :followingId")
+    List<User> findFollowersByFollowingId(UUID followingId);
+
+    @Query("SELECT f.following FROM Follow f WHERE f.follower.id = :followerId")
+    List<User> findFollowingByFollowerId(UUID followerId);
+
+    long countByFollower(User follower);
+    long countByFollowing(User following);
+
+    @Query("SELECT f.following.id FROM Follow f WHERE f.follower.id = :followerId AND f.following.id IN :followingIds")
+    List<UUID> findFollowingIdsByFollowerIdAndFollowingIdsIn(UUID followerId, List<UUID> followingIds);
+
+    @Modifying
+    @Query("DELETE FROM Follow f WHERE f.follower.id = :followerId AND f.following.id = :followingId")
+    void deleteByFollowerIdAndFollowingId(UUID followerId, UUID followingId);
+}

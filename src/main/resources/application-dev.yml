@@ -2,7 +2,11 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
+
+app:
+  docs:
+    public-enabled: true
 
 logging:
   level:

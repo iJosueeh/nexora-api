@@ -15,4 +15,6 @@ public interface ProfilesInterestsRepository extends JpaRepository<ProfilesInter
     long countByProfile(Profiles profile);
 
     List<ProfilesInterests> findAllByProfile(Profiles profile);
+
+    List<ProfilesInterests> findAllByProfileIn(List<Profiles> profiles);
 }
