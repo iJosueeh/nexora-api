@@ -138,7 +138,7 @@
 			<plugin>
 				<groupId>org.flywaydb</groupId>
 				<artifactId>flyway-maven-plugin</artifactId>
-				<version>10.10.0</version>
+				<version>12.6.2</version>
 				<configuration>
 					<locations>
 						<location>filesystem:src/main/resources/db/migration</location>
