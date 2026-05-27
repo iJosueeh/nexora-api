@@ -216,19 +216,21 @@ class GraphQlQueriesIntegrationTest {
         Post post1 = new Post();
         post1.setAutor(author);
         post1.setTitulo("Post Trending 1");
-        post1.setContent("Contenido con trending");
+        post1.setContent("Contenido con trending #tag1");
         post1.setIsOfficial(false);
         post1.setStatus("PUBLISHED");
         post1 = postRepository.save(post1);
+        jdbcTemplate.update("INSERT INTO post_tags (post_id, tag) VALUES (?, ?)", post1.getId(), "tag1");
 
         // Post 2: 2 interacciones (2 likes) en últimas 24h
         Post post2 = new Post();
         post2.setAutor(author);
         post2.setTitulo("Post Trending 2");
-        post2.setContent("Contenido con menos trending");
+        post2.setContent("Contenido con menos trending #tag2");
         post2.setIsOfficial(false);
         post2.setStatus("PUBLISHED");
         post2 = postRepository.save(post2);
+        jdbcTemplate.update("INSERT INTO post_tags (post_id, tag) VALUES (?, ?)", post2.getId(), "tag2");
 
         // Post 3: 1 interacción pero fuera de 24h
         Post post3 = new Post();
@@ -309,12 +311,8 @@ class GraphQlQueriesIntegrationTest {
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.errors").doesNotExist())
-                .andExpect(jsonPath("$.data.trendingTopics[0].titulo").value("Post Trending 1"))
-                .andExpect(jsonPath("$.data.trendingTopics[0].interactionScore").value(5))
-                .andExpect(jsonPath("$.data.trendingTopics[0].commentsCount").value(2))
-                .andExpect(jsonPath("$.data.trendingTopics[0].likesCount").value(3))
-                .andExpect(jsonPath("$.data.trendingTopics[1].titulo").value("Post Trending 2"))
-                .andExpect(jsonPath("$.data.trendingTopics[1].interactionScore").value(2))
+                .andExpect(jsonPath("$.data.trendingTopics[0].titulo").value("#tag1"))
+                .andExpect(jsonPath("$.data.trendingTopics[1].titulo").value("#tag2"))
                 .andExpect(jsonPath("$.data.trendingTopics.length()").value(2));
     }
 

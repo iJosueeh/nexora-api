@@ -5,13 +5,19 @@ import java.util.Set;
 import com.nexora.core.common.entity.AuditableBaseEntity;
 import com.nexora.core.user.entity.User;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "university_events")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UniversityEvent extends AuditableBaseEntity {
 
     @Column(name = "slug", nullable = false, unique = true)
@@ -24,7 +30,7 @@ public class UniversityEvent extends AuditableBaseEntity {
     private String description;
 
     @Column(name = "event_date", nullable = false)
-    private String date; // Podría ser LocalDateTime, pero mantendremos String por ahora para match con Mocks
+    private String date;
 
     @Column(name = "location", nullable = false)
     private String location;
@@ -47,11 +53,15 @@ public class UniversityEvent extends AuditableBaseEntity {
         joinColumns = @JoinColumn(name = "event_id"),
         inverseJoinColumns = @JoinColumn(name = "user_id")
     )
+    @Builder.Default
     private Set<User> attendees = new HashSet<>();
 
     @Embeddable
     @Getter
     @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class Organizer {
         @Column(name = "organizer_name")
         private String name;
@@ -62,6 +72,9 @@ public class UniversityEvent extends AuditableBaseEntity {
     @Embeddable
     @Getter
     @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class CommunityLinks {
         private String whatsapp;
         private String telegram;

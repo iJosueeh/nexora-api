@@ -6,13 +6,18 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nexora.core.content.entity.Comment;
 import com.nexora.core.content.entity.Post;
+import com.nexora.core.content.repository.CommentRepository;
 import com.nexora.core.content.repository.PostRepository;
+import com.nexora.core.graphql.dto.CommentThreadView;
+import com.nexora.core.graphql.dto.CreateCommentInput;
 import com.nexora.core.graphql.dto.CreatePublicationInput;
 import com.nexora.core.graphql.dto.FeedAuthorView;
 import com.nexora.core.graphql.dto.FeedPostView;
@@ -22,14 +27,104 @@ import com.nexora.core.user.entity.User;
 import com.nexora.core.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FeedMutationService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final ProfilesRepository profilesRepository;
+    private final CommentRepository commentRepository;
+
+    @Transactional
+    public CommentThreadView crearComentario(Jwt jwt, CreateCommentInput input) {
+        String email = jwt.getClaimAsString("email");
+        User user = userRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found"));
+
+        Profiles profile = profilesRepository.findByUser_Id(user.getId());
+
+        FeedAuthorView autor = new FeedAuthorView(
+                user.getId(),
+                profile != null ? profile.getUsername() : user.getEmail().split("@")[0],
+                profile != null ? profile.getFullName() : user.getEmail(),
+                profile != null ? profile.getAvatarUrl() : null
+        );
+
+        Post post = postRepository.findById(input.postId())
+                .orElseThrow(() -> new IllegalArgumentException("Post not found"));
+
+        Comment comment = new Comment();
+        comment.setPost(post);
+        comment.setAutor(user);
+        comment.setContent(input.contenido());
+
+        if (input.parentId() != null) {
+            Comment parent = commentRepository.findById(input.parentId())
+                    .orElseThrow(() -> new IllegalArgumentException("Parent comment not found"));
+            comment.setParent(parent);
+        }
+
+        Comment saved = commentRepository.saveAndFlush(comment);
+        
+        return new CommentThreadView(
+                saved.getId(),
+                saved.getPost().getId(),
+                saved.getParent() != null ? saved.getParent().getId() : null,
+                autor,
+                saved.getContent(),
+                saved.getCreatedAt().atOffset(ZoneOffset.UTC)
+        );
+    }
+
+    @Transactional
+    public CommentThreadView editarComentario(Jwt jwt, UUID commentId, String contenido) {
+        String email = jwt.getClaimAsString("email");
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
+
+        if (!comment.getAutor().getEmail().equalsIgnoreCase(email.trim())) {
+            throw new IllegalStateException("Only the author can edit this comment");
+        }
+
+        comment.setContent(contenido);
+        Comment updated = commentRepository.saveAndFlush(comment);
+
+        Profiles profile = profilesRepository.findByUser_Id(updated.getAutor().getId());
+
+        FeedAuthorView autor = new FeedAuthorView(
+                updated.getAutor().getId(),
+                profile != null ? profile.getUsername() : updated.getAutor().getEmail().split("@")[0],
+                profile != null ? profile.getFullName() : updated.getAutor().getEmail(),
+                profile != null ? profile.getAvatarUrl() : null
+        );
+
+        return new CommentThreadView(
+                updated.getId(),
+                updated.getPost().getId(),
+                updated.getParent() != null ? updated.getParent().getId() : null,
+                autor,
+                updated.getContent(),
+                updated.getCreatedAt().atOffset(ZoneOffset.UTC)
+        );
+    }
+
+    @Transactional
+    public boolean eliminarComentario(Jwt jwt, UUID commentId) {
+        String email = jwt.getClaimAsString("email");
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
+
+        if (!comment.getAutor().getEmail().equalsIgnoreCase(email.trim())) {
+            throw new IllegalStateException("Only the author can delete this comment");
+        }
+
+        commentRepository.delete(comment);
+        return true;
+    }
 
     @Transactional
     public FeedPostView crearPublicacion(Jwt jwt, CreatePublicationInput input) {

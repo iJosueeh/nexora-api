@@ -9,6 +9,8 @@ import org.springframework.stereotype.Controller;
 import com.nexora.core.auth.services.AuthService;
 import com.nexora.core.content.services.InteractionService;
 import com.nexora.core.content.services.SocialService;
+import com.nexora.core.graphql.dto.CommentThreadView;
+import com.nexora.core.graphql.dto.CreateCommentInput;
 import com.nexora.core.graphql.dto.CreatePublicationInput;
 import com.nexora.core.graphql.dto.FeedPostView;
 import com.nexora.core.graphql.dto.ProfileView;
@@ -32,6 +34,21 @@ public class NexoraMutationController {
     }
 
     @MutationMapping
+    public CommentThreadView crearComentario(@AuthenticationPrincipal Jwt jwt, @Argument CreateCommentInput input) {
+        return feedMutationService.crearComentario(jwt, input);
+    }
+
+    @MutationMapping
+    public CommentThreadView editarComentario(@AuthenticationPrincipal Jwt jwt, @Argument UUID commentId, @Argument String contenido) {
+        return feedMutationService.editarComentario(jwt, commentId, contenido);
+    }
+
+    @MutationMapping
+    public boolean eliminarComentario(@AuthenticationPrincipal Jwt jwt, @Argument UUID commentId) {
+        return feedMutationService.eliminarComentario(jwt, commentId);
+    }
+
+    @MutationMapping
     public ProfileView actualizarPerfil(@AuthenticationPrincipal Jwt jwt, @Argument UpdateProfileInput input) {
         String email = jwt.getClaimAsString("email");
         return authService.actualizarPerfil(email, input);
@@ -45,5 +62,10 @@ public class NexoraMutationController {
     @MutationMapping
     public boolean toggleFollow(@Argument UUID targetUserId) {
         return socialService.toggleFollow(targetUserId);
+    }
+
+    @MutationMapping
+    public boolean toggleCommentLike(@Argument UUID commentId) {
+        return interactionService.toggleCommentLike(commentId);
     }
 }

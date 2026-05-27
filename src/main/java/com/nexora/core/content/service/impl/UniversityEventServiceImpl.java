@@ -1,8 +1,10 @@
 package com.nexora.core.content.service.impl;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.nexora.core.content.entity.UniversityEvent;
@@ -64,5 +66,18 @@ public class UniversityEventServiceImpl implements UniversityEventService {
                 .map(event -> event.getAttendees().stream()
                         .anyMatch(u -> u.getId().equals(userId)))
                 .orElse(false);
+    }
+
+    @Override
+    public Map<UUID, Boolean> isUserRegisteredBatch(List<UUID> eventIds, UUID userId) {
+        if (eventIds == null || eventIds.isEmpty() || userId == null) {
+            return Map.of();
+        }
+        
+        List<UUID> registeredIds = eventRepository.findRegisteredEventIds(eventIds, userId);
+        return eventIds.stream().collect(Collectors.toMap(
+            id -> id,
+            registeredIds::contains
+        ));
     }
 }

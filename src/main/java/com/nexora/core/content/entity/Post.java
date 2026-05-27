@@ -16,15 +16,20 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
 @Getter
 @Setter
+@Entity
 @Table(name = "posts")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Post extends AuditableBaseEntity {
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "autor_id", nullable = false)
     private User autor;
@@ -39,9 +44,11 @@ public class Post extends AuditableBaseEntity {
     private String content;
 
     @Column(name = "is_official", nullable = false)
+    @Builder.Default
     private Boolean isOfficial = false;
 
     @Column(name = "status")
+    @Builder.Default
     private String status = "PUBLISHED";
 
     @Column(name = "location")
@@ -53,8 +60,10 @@ public class Post extends AuditableBaseEntity {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "post_tags", joinColumns = @JoinColumn(name = "post_id"))
     @Column(name = "tag", nullable = false)
+    @Builder.Default
     private List<String> tags = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Comment> comentarios = new ArrayList<>();
 }
