@@ -3,6 +3,7 @@ scalar DateTime
 type Query {
   health: String!
   obtenerFeedPrincipal(limit: Int = 20, offset: Int = 0): [FeedPost!]!
+  obtenerPublicacionPorId(postId: ID!): FeedPost
   publicacionesPorUsuario(username: String!, limit: Int = 20, offset: Int = 0): [FeedPost!]!
   comentariosPorPost(postId: ID!): [CommentThread!]!
   availableTags(search: String = "", limit: Int = 12): [TagSuggestion!]!
@@ -46,6 +47,12 @@ type Mutation {
   crearPublicacion(input: CreatePublicationInput!): FeedPost!
   actualizarPerfil(input: UpdateProfileInput!): Profile!
   
+  # Comentarios
+  crearComentario(input: CreateCommentInput!): CommentThread!
+  editarComentario(commentId: ID!, contenido: String!): CommentThread!
+  eliminarComentario(commentId: ID!): Boolean!
+  toggleCommentLike(commentId: ID!): Boolean!
+
   # Interacciones
   toggleLike(postId: ID!): Boolean!
   toggleFollow(targetUserId: ID!): Boolean!
@@ -61,6 +68,12 @@ type Mutation {
   updateUserStatus(userId: ID!, isActive: Boolean!): Profile!
   markPostAsOfficial(postId: ID!, isOfficial: Boolean!): FeedPost!
   deletePost(postId: ID!): Boolean!
+}
+
+input CreateCommentInput {
+  postId: ID!
+  parentId: ID
+  contenido: String!
 }
 
 type Notification {
@@ -174,9 +187,11 @@ type CommentThread {
   id: ID!
   postId: ID!
   parentId: ID
-  autorId: ID!
+  autor: FeedAuthor!
   contenido: String!
   createdAt: DateTime
+  likesCount: Int!
+  isLiked: Boolean!
   respuestas: [CommentThread!]!
 }
 

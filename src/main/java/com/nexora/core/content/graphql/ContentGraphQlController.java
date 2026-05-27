@@ -1,17 +1,18 @@
 package com.nexora.core.content.graphql;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
-import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 import com.nexora.core.content.entity.ResearchPaper;
 import com.nexora.core.content.entity.UniversityEvent;
 import com.nexora.core.content.service.ResearchPaperService;
 import com.nexora.core.content.service.UniversityEventService;
-import com.nexora.core.user.entity.User;
 import com.nexora.core.security.service.SecurityService;
 import lombok.RequiredArgsConstructor;
 
@@ -53,18 +54,26 @@ public class ContentGraphQlController {
         return eventService.confirmRSVP(eventId, userId);
     }
 
-    @SchemaMapping(typeName = "UniversityEvent", field = "isUserRegistered")
-    public boolean isUserRegistered(UniversityEvent event) {
+    @BatchMapping(typeName = "UniversityEvent", field = "isUserRegistered")
+    public Map<UniversityEvent, Boolean> isUserRegistered(List<UniversityEvent> events) {
         try {
             UUID userId = securityService.getCurrentUserId();
-            return eventService.isUserRegistered(event.getId(), userId);
+            List<UUID> eventIds = events.stream().map(UniversityEvent::getId).toList();
+            Map<UUID, Boolean> registrations = eventService.isUserRegisteredBatch(eventIds, userId);
+            return events.stream().collect(Collectors.toMap(
+                event -> event,
+                event -> registrations.getOrDefault(event.getId(), false)
+            ));
         } catch (Exception e) {
-            return false;
+            return events.stream().collect(Collectors.toMap(event -> event, event -> false));
         }
     }
 
-    @SchemaMapping(typeName = "UniversityEvent", field = "attendeesCount")
-    public int attendeesCount(UniversityEvent event) {
-        return event.getAttendees().size();
+    @BatchMapping(typeName = "UniversityEvent", field = "attendeesCount")
+    public Map<UniversityEvent, Integer> attendeesCount(List<UniversityEvent> events) {
+        return events.stream().collect(Collectors.toMap(
+            event -> event,
+            event -> event.getAttendees() != null ? event.getAttendees().size() : 0
+        ));
     }
 }

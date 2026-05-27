@@ -24,6 +24,48 @@ public class SchemaCompatibilityInitializer implements ApplicationRunner {
         ensurePostsLocationColumn();
         ensurePostTagsTable();
         ensurePostTagsTagColumn();
+        ensureCommentsTable();
+        ensureCommentLikesTable();
+    }
+
+    private void ensureCommentLikesTable() {
+        try {
+            jdbcTemplate.execute("""
+                    CREATE TABLE IF NOT EXISTS comment_likes (
+                        comment_id UUID NOT NULL,
+                        user_id UUID NOT NULL,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (comment_id, user_id),
+                        CONSTRAINT fk_comment_likes_comment FOREIGN KEY (comment_id) REFERENCES comentarios(id) ON DELETE CASCADE,
+                        CONSTRAINT fk_comment_likes_user FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+                    )
+                    """);
+            log.info("Schema compatibility: confirmed 'comment_likes' table exists.");
+        } catch (Exception ex) {
+            log.warn("Schema compatibility: could not ensure 'comment_likes' table", ex);
+        }
+    }
+
+    private void ensureCommentsTable() {
+        try {
+            jdbcTemplate.execute("""
+                    CREATE TABLE IF NOT EXISTS comentarios (
+                        id UUID PRIMARY KEY,
+                        post_id UUID NOT NULL,
+                        parent_id UUID,
+                        autor_id UUID NOT NULL,
+                        content TEXT NOT NULL,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        CONSTRAINT fk_comment_post FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+                        CONSTRAINT fk_comment_parent FOREIGN KEY (parent_id) REFERENCES comentarios(id) ON DELETE CASCADE,
+                        CONSTRAINT fk_comment_author FOREIGN KEY (autor_id) REFERENCES usuarios(id) ON DELETE CASCADE
+                    )
+                    """);
+            log.info("Schema compatibility: confirmed 'comentarios' table exists.");
+        } catch (Exception ex) {
+            log.warn("Schema compatibility: could not ensure 'comentarios' table", ex);
+        }
     }
 
     private void ensurePostsLocationColumn() {

@@ -37,4 +37,26 @@ public class InteractionService {
             return true; // Liked added
         }
     }
+
+    @Transactional
+    public boolean toggleCommentLike(UUID commentId) {
+        UUID currentUserId = securityService.getCurrentUserId();
+
+        String checkSql = "SELECT EXISTS(SELECT 1 FROM comment_likes WHERE comment_id = :commentId AND user_id = :userId)";
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("commentId", commentId)
+                .addValue("userId", currentUserId);
+
+        Boolean alreadyLiked = jdbcTemplate.queryForObject(checkSql, params, Boolean.class);
+
+        if (Boolean.TRUE.equals(alreadyLiked)) {
+            String deleteSql = "DELETE FROM comment_likes WHERE comment_id = :commentId AND user_id = :userId";
+            jdbcTemplate.update(deleteSql, params);
+            return false;
+        } else {
+            String insertSql = "INSERT INTO comment_likes (comment_id, user_id) VALUES (:commentId, :userId)";
+            jdbcTemplate.update(insertSql, params);
+            return true;
+        }
+    }
 }

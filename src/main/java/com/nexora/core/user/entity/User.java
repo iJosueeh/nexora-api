@@ -10,7 +10,10 @@ import com.nexora.core.profile.entity.Profiles;
 
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import org.springframework.security.core.GrantedAuthority;
@@ -23,12 +26,16 @@ import java.util.Collections;
 @Getter
 @Setter
 @Table(name = "usuarios")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class User extends AuditableBaseEntity implements UserDetails {
 
     @Column(name="email",unique = true, nullable = false)
     private String email;
 
     @Column(nullable = false, name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -39,14 +46,16 @@ public class User extends AuditableBaseEntity implements UserDetails {
     private Profiles profile;
 
     @OneToMany(mappedBy = "autor", fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Post> posts = new ArrayList<>();
 
     @OneToMany(mappedBy = "autor", fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Comment> comments = new ArrayList<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority(role.getName()));
+        return Collections.singletonList(new SimpleGrantedAuthority(role != null ? role.getName() : "ROLE_USER"));
     }
 
     @Override

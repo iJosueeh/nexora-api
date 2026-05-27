@@ -49,6 +49,12 @@ public class        NexoraQueryController {
     }
 
     @QueryMapping
+    public FeedPostView obtenerPublicacionPorId(@Argument UUID postId) {
+        if (postId == null) return null;
+        return feedQueryService.obtenerPublicacionPorId(postId);
+    }
+
+    @QueryMapping
     public List<FeedPostView> publicacionesPorUsuario(@Argument String username, @Argument Integer limit,
             @Argument Integer offset) {
         int safeLimit = limit == null ? 20 : Math.max(1, Math.min(limit, 100));
