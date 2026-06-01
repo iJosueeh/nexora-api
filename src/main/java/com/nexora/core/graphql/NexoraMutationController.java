@@ -12,6 +12,7 @@ import com.nexora.core.content.services.SocialService;
 import com.nexora.core.graphql.dto.CommentThreadView;
 import com.nexora.core.graphql.dto.CreateCommentInput;
 import com.nexora.core.graphql.dto.CreatePublicationInput;
+import com.nexora.core.graphql.dto.UpdatePublicationInput;
 import com.nexora.core.graphql.dto.FeedPostView;
 import com.nexora.core.graphql.dto.ProfileView;
 import com.nexora.core.graphql.dto.UpdateProfileInput;
@@ -31,6 +32,11 @@ public class NexoraMutationController {
     @MutationMapping
     public FeedPostView crearPublicacion(@AuthenticationPrincipal Jwt jwt, @Argument CreatePublicationInput input) {
         return feedMutationService.crearPublicacion(jwt, input);
+    }
+
+    @MutationMapping
+    public FeedPostView editarPublicacion(@AuthenticationPrincipal Jwt jwt, @Argument UUID postId, @Argument UpdatePublicationInput input) {
+        return feedMutationService.editarPublicacion(jwt, postId, input);
     }
 
     @MutationMapping
