@@ -161,6 +161,14 @@ input CreatePublicationInput {
   imageUrl: String
 }
 
+input UpdatePublicationInput {
+  titulo: String
+  contenido: String!
+  tags: [String!]
+  location: String
+  imageUrl: String
+}
+
 type FeedPost {
   id: ID!
   titulo: String

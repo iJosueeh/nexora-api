@@ -19,6 +19,7 @@ import com.nexora.core.content.repository.PostRepository;
 import com.nexora.core.graphql.dto.CommentThreadView;
 import com.nexora.core.graphql.dto.CreateCommentInput;
 import com.nexora.core.graphql.dto.CreatePublicationInput;
+import com.nexora.core.graphql.dto.UpdatePublicationInput;
 import com.nexora.core.graphql.dto.FeedAuthorView;
 import com.nexora.core.graphql.dto.FeedPostView;
 import com.nexora.core.profile.entity.Profiles;
@@ -153,6 +154,37 @@ public class FeedMutationService {
 
         Post savedPost = postRepository.saveAndFlush(post);
         return toView(savedPost, resolveProfile(user));
+    }
+
+    @Transactional
+    public FeedPostView editarPublicacion(Jwt jwt, UUID postId, UpdatePublicationInput input) {
+        String email = jwt.getClaimAsString("email");
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Authenticated user email is required");
+        }
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post not found"));
+
+        if (!post.getAutor().getEmail().equalsIgnoreCase(email.trim())) {
+            throw new IllegalStateException("Only the author can edit this publication");
+        }
+
+        String content = input.contenido() == null ? "" : input.contenido().trim();
+        if (content.isBlank()) {
+            throw new IllegalArgumentException("Publication content is required");
+        }
+
+        post.setTitulo(resolveTitle(input.titulo(), content));
+        post.setContent(content);
+        post.setLocation(resolveLocation(input.location()));
+        post.setTags(resolveTags(input.tags()));
+        if (input.imageUrl() != null) {
+            post.setImageUrl(input.imageUrl());
+        }
+
+        Post updatedPost = postRepository.saveAndFlush(post);
+        return toView(updatedPost, resolveProfile(updatedPost.getAutor()));
     }
 
     private FeedPostView toView(Post post, Profiles profile) {
