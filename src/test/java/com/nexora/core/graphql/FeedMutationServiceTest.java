@@ -1,4 +1,4 @@
-package com.nexora.core.graphql;
+package com.nexora.core.presentation.graphql;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -16,12 +16,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.jwt.Jwt;
 
-import com.nexora.core.content.entity.Post;
-import com.nexora.core.content.repository.PostRepository;
-import com.nexora.core.graphql.dto.UpdatePublicationInput;
-import com.nexora.core.profile.repository.ProfilesRepository;
-import com.nexora.core.user.entity.User;
-import com.nexora.core.user.repository.UserRepository;
+import com.nexora.core.domain.content.aggregates.Post;
+import com.nexora.core.domain.content.repositories.PostRepository;
+import com.nexora.core.domain.user.aggregates.User;
+import com.nexora.core.domain.user.repositories.UserRepository;
+import com.nexora.core.domain.user.valueobjects.Email;
+import com.nexora.core.domain.user.valueobjects.UserRole;
+import com.nexora.core.presentation.graphql.dto.UpdatePublicationInput;
+import com.nexora.core.domain.user.repositories.ProfileRepository;
 
 @ExtendWith(MockitoExtension.class)
 class FeedMutationServiceTest {
@@ -31,7 +33,7 @@ class FeedMutationServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
-    private ProfilesRepository profilesRepository;
+    private ProfileRepository profileRepository;
     @Mock
     private Jwt jwt;
 
@@ -45,9 +47,12 @@ class FeedMutationServiceTest {
     @BeforeEach
     void setUp() {
         postId = UUID.randomUUID();
-        author = new User();
-        author.setEmail("author@utp.edu.pe");
-        author.setId(UUID.randomUUID());
+        author = User.builder()
+                .email(new Email("author@utp.edu.pe"))
+                .id(UUID.randomUUID())
+                .isActive(true)
+                .role(UserRole.ROLE_STUDENT)
+                .build();
 
         post = new Post();
         post.setId(postId);
@@ -59,7 +64,7 @@ class FeedMutationServiceTest {
     void editarPublicacion_Success() {
         when(jwt.getClaimAsString("email")).thenReturn("author@utp.edu.pe");
         when(postRepository.findById(postId)).thenReturn(Optional.of(post));
-        when(postRepository.saveAndFlush(any())).thenReturn(post);
+        when(postRepository.save(any())).thenReturn(post);
 
         UpdatePublicationInput input = new UpdatePublicationInput(
                 "New Title", "Updated Content", List.of("tag1"), "Location", null
@@ -67,7 +72,7 @@ class FeedMutationServiceTest {
 
         assertDoesNotThrow(() -> feedMutationService.editarPublicacion(jwt, postId, input));
         
-        verify(postRepository).saveAndFlush(post);
+        verify(postRepository).save(post);
         assertEquals("Updated Content", post.getContent());
     }
 
@@ -84,7 +89,7 @@ class FeedMutationServiceTest {
                 feedMutationService.editarPublicacion(jwt, postId, input)
         );
         
-        verify(postRepository, never()).saveAndFlush(any());
+        verify(postRepository, never()).save(any());
     }
 
     @Test

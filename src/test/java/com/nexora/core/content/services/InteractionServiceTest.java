@@ -1,27 +1,25 @@
 package com.nexora.core.content.services;
 
-import com.nexora.core.security.service.SecurityService;
+import com.nexora.core.application.content.services.InteractionService;
+import com.nexora.core.domain.content.repositories.LikeRepository;
+import com.nexora.core.application.security.services.SecurityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class InteractionServiceTest {
 
     @Mock
-    private NamedParameterJdbcTemplate jdbcTemplate;
+    private LikeRepository likeRepository;
 
     @Mock
     private SecurityService securityService;
@@ -41,24 +39,24 @@ class InteractionServiceTest {
     @Test
     void toggleLikeShouldDeleteWhenAlreadyLiked() {
         when(securityService.getCurrentUserId()).thenReturn(userId);
-        when(jdbcTemplate.queryForObject(any(String.class), any(MapSqlParameterSource.class), eq(Boolean.class)))
-                .thenReturn(true);
+        when(likeRepository.existsPostLike(postId, userId)).thenReturn(true);
 
         boolean result = interactionService.toggleLike(postId);
 
         assertFalse(result);
-        verify(jdbcTemplate).update(contains("DELETE FROM post_likes"), any(MapSqlParameterSource.class));
+        verify(likeRepository).removePostLike(postId, userId);
+        verify(likeRepository, never()).addPostLike(any(), any());
     }
 
     @Test
     void toggleLikeShouldInsertWhenNotLiked() {
         when(securityService.getCurrentUserId()).thenReturn(userId);
-        when(jdbcTemplate.queryForObject(any(String.class), any(MapSqlParameterSource.class), eq(Boolean.class)))
-                .thenReturn(false);
+        when(likeRepository.existsPostLike(postId, userId)).thenReturn(false);
 
         boolean result = interactionService.toggleLike(postId);
 
         assertTrue(result);
-        verify(jdbcTemplate).update(contains("INSERT INTO post_likes"), any(MapSqlParameterSource.class));
+        verify(likeRepository).addPostLike(postId, userId);
+        verify(likeRepository, never()).removePostLike(any(), any());
     }
 }
