@@ -1,92 +1,111 @@
-# Feature: Auth
+# Módulo: Autenticación y Seguridad (REST + JWT)
 
-## 1. Objetivo del modulo
+## 1. Objetivo del módulo
 
-Gestionar registro e inicio de sesion de usuarios para emitir JWT de acceso en Nexora.
+Regular el acceso seguro de los estudiantes validando identidades mediante tokens JWT cifrados, coordinando el registro inicial y el completado de datos con los catálogos de la institución.
 
 ## 2. Alcance
 
-- Incluye registro de usuario y login por email/password.
-- Incluye generacion de access token JWT.
-- No incluye refresh token (pendiente).
+- **Incluye:** Registro de usuario, login por email/password, generación de JWT, validación de tokens, endpoints públicos/protegidos.
+- **Incluye:** Completado de perfil con datos de catálogo institucional (carrera, facultad, semestre).
+- **No incluye:** SSO, OAuth2 social, refresh token rotation (pendiente).
 
-## 3. Logica de negocio
+## 3. Lógica de negocio
 
-- Registro:
-  - Si el email ya existe, se rechaza la operacion.
+- **Registro:**
+  - El email institucional debe pertenecer a un dominio válido configurado.
+  - Si el email ya existe, se rechaza la operación.
   - El password se almacena hasheado con BCrypt.
-  - Usuario nuevo inicia activo (`isActive=true`) y con rol `USER`.
-- Login:
+  - Usuario nuevo inicia con `isActive=true` y rol `STUDENT`.
+- **Login:**
   - Se autentica con `AuthenticationManager`.
-  - Si credenciales son validas, se retorna token JWT.
-- Respuesta de auth:
-  - Incluye token, tipo (`Bearer`), expiracion, userId, email y role.
+  - Si credenciales son válidas, se retorna JWT con claims: `sub` (email), `role`, `userId`, `name`.
+- **Completado de datos:**
+  - Post-registro, el estudiante debe seleccionar carrera, facultad y semestre desde catálogos precargados.
+  - Si no completa en 7 días, la cuenta se marca como `pending-onboarding`.
 
 ## 4. Validaciones
 
 ### Entrada
 
-- `RegisterRequest.username`: requerido, min 3, max 60.
-- `RegisterRequest.email`: requerido, formato email valido.
-- `RegisterRequest.password`: requerido, min 8, max 72.
-- `LoginRequest.email`: requerido, formato email valido.
-- `LoginRequest.password`: requerido, min 8, max 72.
+- `RegisterRequest.email`: requerido, formato email, dominio institucional válido.
+- `RegisterRequest.password`: requerido, min 8, max 72, debe contener mayúscula y número.
+- `RegisterRequest.fullName`: requerido, min 3, max 120.
+- `LoginRequest.email`: requerido, formato email válido.
+- `LoginRequest.password`: requerido.
 
 ### Reglas de dominio
 
-- Email unico (`existsByEmail`).
-- Credenciales invalidas generan error de autenticacion.
+- Email único (`existsByEmail`).
+- Catálogo institucional debe existir para la carrera seleccionada.
+- Token JWT expira en 24h (access) y 7 días (refresh).
 
 ## 5. Contratos API
 
 ### REST
 
-- `POST /api/auth/register`
-  - 201 cuando registra correctamente.
-  - 400 si email ya existe.
-  - 422 en errores de validacion.
-- `POST /api/auth/login`
-  - 200 cuando autentica correctamente.
-  - 401 en credenciales invalidas.
-  - 422 en errores de validacion.
+| Método | Ruta | Códigos | Descripción |
+|--------|------|---------|-------------|
+| `POST` | `/api/auth/register` | 201, 400, 422 | Registro de estudiante |
+| `POST` | `/api/auth/login` | 200, 401, 422 | Inicio de sesión |
+| `POST` | `/api/auth/refresh` | 200, 401 | Refrescar token |
+| `GET` | `/api/auth/me` | 200, 401 | Perfil del usuario autenticado |
+| `PUT` | `/api/auth/onboarding` | 200, 400, 422 | Completar datos de catálogo |
+
+### GraphQL
+
+- No aplica (módulo puramente REST por seguridad).
 
 ## 6. Persistencia
 
-- Entidad: `User`.
-- Repositorio: `UserRepository`.
+- Entidades: `User`, `StudentProfile`, `InstitutionalCatalog`.
+- Repositorios: `UserRepository`, `StudentProfileRepository`, `CatalogRepository`.
+- `User` → `StudentProfile` (1:1).
+- `StudentProfile` → `InstitutionalCatalog` (M:1).
 
 ## 7. Seguridad
 
-- Endpoints publicos: `/api/auth/**`.
-- No requiere JWT para login/registro.
+- Endpoints públicos: `/api/auth/register`, `/api/auth/login`, `/api/auth/refresh`.
+- Endpoints autenticados: `/api/auth/me`, `/api/auth/onboarding`.
+- JWT firmado con HMAC-SHA256, secreto configurable via `JWT_SECRET`.
+- Claims mínimos: `sub` (email), `role`, `userId`, `iat`, `exp`.
 
 ## 8. Errores y excepciones
 
-- `IllegalArgumentException("Email is already registered")` -> 400.
-- `BadCredentialsException` -> 401.
-- `MethodArgumentNotValidException` -> 422.
+| Escenario | Excepción | HTTP Status |
+|-----------|-----------|-------------|
+| Email ya registrado | `EmailAlreadyExistsException` | 400 |
+| Credenciales inválidas | `BadCredentialsException` | 401 |
+| Token expirado | `ExpiredJwtException` | 401 |
+| Dominio email no válido | `InvalidEmailDomainException` | 400 |
+| Catálogo no encontrado | `ResourceNotFoundException` | 404 |
 
-## 9. Dependencias del modulo
+## 9. Dependencias del módulo
 
-- `PasswordEncoder`
+- `JwtService` — generación y validación de tokens
+- `PasswordEncoder` (BCrypt)
 - `AuthenticationManager`
-- `JwtService`
-- `UserRepository`
+- `UserRepository`, `StudentProfileRepository`
+- `CatalogService` — catálogos institucionales
 
 ## 10. Observabilidad
 
-- No se registran logs de negocio explicitos en `AuthService` actualmente.
-- Recomendado: loguear intentos de login fallido sin exponer datos sensibles.
+- Loggear intentos de login fallidos (sin exponer credenciales).
+- Loggear registros exitosos con userId.
+- Métrica: contador de registros vs. onboarding completado.
 
 ## 11. Casos de prueba sugeridos
 
-- Registro exitoso retorna JWT.
-- Login con password incorrecto falla.
-- Registro duplicado por email falla.
-- Validaciones de DTO en requests invalidos.
+- Registro exitoso retorna JWT y 201.
+- Login con password incorrecto retorna 401.
+- Registro duplicado por email retorna 400.
+- Token expirado en endpoint protegido retorna 401.
+- Onboarding con catálogo válido completa el perfil.
+- Onboarding con catálogo inexistente retorna 404.
 
 ## 12. TODO / Pendientes
 
-- Agregar refresh token.
-- Agregar logout con invalidacion de token (si se implementa blacklist/rotacion).
-- Evaluar verificacion de email para activacion de cuenta.
+- Implementar refresh token rotation.
+- Agregar rate limiting en login (ej: 5 intentos por minuto).
+- Verificación de email mediante OTP.
+- Integración con LDAP institucional (futuro).
