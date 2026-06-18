@@ -61,4 +61,18 @@ public class PaperPersistenceAdapter implements PaperRepository {
         ResearchPaperJpaEntity saved = paperJpaRepository.save(entity);
         return paperMapper.toDomain(saved);
     }
+
+    @Override
+    @Transactional
+    public void deleteById(UUID id) {
+        paperJpaRepository.deleteById(id);
+    }
+
+    @Override
+    public long count(String faculty) {
+        if (faculty != null && !faculty.equalsIgnoreCase("Todos")) {
+            return paperJpaRepository.countByFacultyIgnoreCase(faculty);
+        }
+        return paperJpaRepository.count();
+    }
 }

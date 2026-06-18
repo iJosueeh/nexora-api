@@ -13,4 +13,5 @@ import java.util.UUID;
 public interface ResearchPaperJpaRepository extends JpaRepository<ResearchPaperJpaEntity, UUID> {
     Optional<ResearchPaperJpaEntity> findBySlug(String slug);
     Page<ResearchPaperJpaEntity> findByFacultyIgnoreCase(String faculty, Pageable pageable);
+    long countByFacultyIgnoreCase(String faculty);
 }

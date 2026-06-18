@@ -16,6 +16,9 @@ import com.nexora.core.application.content.usecases.feed.queries.SearchPostsUseC
 import com.nexora.core.application.content.usecases.papers.queries.GetPapersUseCase;
 import com.nexora.core.application.content.usecases.papers.queries.GetPaperBySlugUseCase;
 import com.nexora.core.application.content.usecases.papers.commands.IncrementPaperViewsUseCase;
+import com.nexora.core.application.content.usecases.papers.commands.CreatePaperUseCase;
+import com.nexora.core.application.content.usecases.papers.commands.EditPaperUseCase;
+import com.nexora.core.application.content.usecases.papers.commands.DeletePaperUseCase;
 import com.nexora.core.application.content.usecases.events.queries.GetEventsUseCase;
 import com.nexora.core.application.content.usecases.events.commands.ConfirmRSVPUseCase;
 import com.nexora.core.application.content.usecases.events.commands.CreateEventUseCase;
@@ -27,6 +30,8 @@ import com.nexora.core.application.content.dto.FeedAuthorView;
 import com.nexora.core.application.security.services.SecurityService;
 import com.nexora.core.presentation.graphql.dto.CreateEventInput;
 import com.nexora.core.presentation.graphql.dto.UpdateEventInput;
+import com.nexora.core.presentation.graphql.dto.CreateResearchPaperInput;
+import com.nexora.core.presentation.graphql.dto.UpdateResearchPaperInput;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -36,6 +41,9 @@ public class ContentGraphQlController {
     private final GetPapersUseCase getPapersUseCase;
     private final GetPaperBySlugUseCase getPaperBySlugUseCase;
     private final IncrementPaperViewsUseCase incrementPaperViewsUseCase;
+    private final CreatePaperUseCase createPaperUseCase;
+    private final EditPaperUseCase editPaperUseCase;
+    private final DeletePaperUseCase deletePaperUseCase;
     private final SearchPostsUseCase searchPostsUseCase;
     private final GetEventsUseCase getEventsUseCase;
     private final ConfirmRSVPUseCase confirmRSVPUseCase;
@@ -138,6 +146,28 @@ public class ContentGraphQlController {
     @MutationMapping
     public boolean eliminarEvento(@Argument UUID eventId) {
         return deleteEventUseCase.execute(eventId);
+    }
+
+    @MutationMapping
+    public ResearchPaper crearRecurso(@Argument CreateResearchPaperInput input) {
+        UUID userId = securityService.getCurrentUserId();
+        return createPaperUseCase.execute(
+                input.title(), input.summary(), input.faculty(),
+                userId, input.pdfUrl());
+    }
+
+    @MutationMapping
+    public ResearchPaper editarRecurso(@Argument UUID paperId, @Argument UpdateResearchPaperInput input) {
+        UUID userId = securityService.getCurrentUserId();
+        return editPaperUseCase.execute(
+                paperId, userId, input.title(), input.summary(),
+                input.faculty(), input.pdfUrl());
+    }
+
+    @MutationMapping
+    public boolean eliminarRecurso(@Argument UUID paperId) {
+        UUID userId = securityService.getCurrentUserId();
+        return deletePaperUseCase.execute(paperId, userId);
     }
 
     @BatchMapping(typeName = "UniversityEvent", field = "isUserRegistered")

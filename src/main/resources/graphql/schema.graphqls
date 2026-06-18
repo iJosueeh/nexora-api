@@ -77,6 +77,11 @@ type Mutation {
   editarEvento(eventId: ID!, input: UpdateEventInput!): UniversityEvent!
   eliminarEvento(eventId: ID!): Boolean!
 
+  # Recursos / Investigación
+  crearRecurso(input: CreateResearchPaperInput!): ResearchPaper!
+  editarRecurso(paperId: ID!, input: UpdateResearchPaperInput!): ResearchPaper!
+  eliminarRecurso(paperId: ID!): Boolean!
+
   # Notificaciones
   markNotificationAsRead(notificationId: ID!): Boolean!
   markAllNotificationsAsRead: Boolean!
@@ -227,6 +232,20 @@ input UpdateEventInput {
   whatsapp: String
   telegram: String
   discord: String
+}
+
+input CreateResearchPaperInput {
+  title: String!
+  summary: String!
+  faculty: String!
+  pdfUrl: String
+}
+
+input UpdateResearchPaperInput {
+  title: String
+  summary: String
+  faculty: String
+  pdfUrl: String
 }
 
 type FeedPost {

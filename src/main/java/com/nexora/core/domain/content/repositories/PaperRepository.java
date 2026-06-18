@@ -11,4 +11,6 @@ public interface PaperRepository {
     Optional<ResearchPaper> findBySlug(String slug);
     Optional<ResearchPaper> findById(UUID id);
     ResearchPaper save(ResearchPaper paper);
+    void deleteById(UUID id);
+    long count(String faculty);
 }
