@@ -36,6 +36,11 @@ type Query {
   followers(userId: ID!): [Profile!]!
   following(userId: ID!): [Profile!]!
 
+  # Grupos de Estudio
+  studyGroups(limit: Int = 20, offset: Int = 0, category: String): [StudyGroup!]!
+  studyGroupBySlug(slug: String!): StudyGroup
+  myGroups: [StudyGroup!]!
+
   # Catálogos
   faculties: [Faculty!]!
   courses: [Course!]!
@@ -81,6 +86,14 @@ type Mutation {
   crearRecurso(input: CreateResearchPaperInput!): ResearchPaper!
   editarRecurso(paperId: ID!, input: UpdateResearchPaperInput!): ResearchPaper!
   eliminarRecurso(paperId: ID!): Boolean!
+
+  # Grupos de Estudio
+  crearGrupo(input: CreateStudyGroupInput!): StudyGroup!
+  editarGrupo(groupId: ID!, input: UpdateStudyGroupInput!): StudyGroup!
+  eliminarGrupo(groupId: ID!): Boolean!
+  unirseGrupo(groupId: ID!): GroupMembership!
+  salirGrupo(groupId: ID!): Boolean!
+  aprobarMembresia(groupId: ID!, membershipId: ID!): GroupMembership!
 
   # Notificaciones
   markNotificationAsRead(notificationId: ID!): Boolean!
@@ -318,4 +331,54 @@ type Course {
 type AcademicInterest {
   id: ID!
   name: String!
+}
+
+# Grupos de Estudio
+type StudyGroup {
+  id: ID!
+  slug: String!
+  name: String!
+  description: String
+  category: String!
+  memberCount: Int!
+  maxMembers: Int!
+  isMember: Boolean!
+  myRole: GroupRole
+  createdAt: DateTime!
+}
+
+type GroupMembership {
+  id: ID!
+  groupId: ID!
+  userId: ID!
+  role: GroupRole!
+  status: GroupMembershipStatus!
+  createdAt: DateTime!
+}
+
+enum GroupRole {
+  OWNER
+  MODERATOR
+  MEMBER
+}
+
+enum GroupMembershipStatus {
+  APPROVED
+  PENDING
+}
+
+input CreateStudyGroupInput {
+  name: String!
+  description: String
+  category: String
+  isPrivate: Boolean
+  maxMembers: Int
+}
+
+input UpdateStudyGroupInput {
+  name: String
+  description: String
+  category: String
+  isPrivate: Boolean
+  maxMembers: Int
 }
