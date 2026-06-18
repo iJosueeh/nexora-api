@@ -20,4 +20,9 @@ public interface UniversityEventJpaRepository extends JpaRepository<UniversityEv
 
     @Query(value = "SELECT e.id FROM university_events e JOIN event_attendees ea ON e.id = ea.event_id WHERE e.id IN :eventIds AND ea.user_id = :userId", nativeQuery = true)
     List<UUID> findRegisteredEventIds(@Param("eventIds") List<UUID> eventIds, @Param("userId") UUID userId);
+
+    @Query(value = "SELECT e.* FROM university_events e WHERE e.search_vector @@ plainto_tsquery('spanish', :query) ORDER BY ts_rank(e.search_vector, plainto_tsquery('spanish', :query)) DESC",
+           countQuery = "SELECT COUNT(*) FROM university_events e WHERE e.search_vector @@ plainto_tsquery('spanish', :query)",
+           nativeQuery = true)
+    List<UniversityEventJpaEntity> searchByFullText(@Param("query") String query, org.springframework.data.domain.Pageable pageable);
 }

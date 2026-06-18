@@ -14,4 +14,9 @@ public interface ResearchPaperJpaRepository extends JpaRepository<ResearchPaperJ
     Optional<ResearchPaperJpaEntity> findBySlug(String slug);
     Page<ResearchPaperJpaEntity> findByFacultyIgnoreCase(String faculty, Pageable pageable);
     long countByFacultyIgnoreCase(String faculty);
+
+    @org.springframework.data.jpa.repository.Query(value = "SELECT p.* FROM research_papers p WHERE p.search_vector @@ plainto_tsquery('spanish', :query) ORDER BY ts_rank(p.search_vector, plainto_tsquery('spanish', :query)) DESC",
+           countQuery = "SELECT COUNT(*) FROM research_papers p WHERE p.search_vector @@ plainto_tsquery('spanish', :query)",
+           nativeQuery = true)
+    java.util.List<ResearchPaperJpaEntity> searchByFullText(@org.springframework.data.repository.query.Param("query") String query, Pageable pageable);
 }

@@ -75,4 +75,13 @@ public class PaperPersistenceAdapter implements PaperRepository {
         }
         return paperJpaRepository.count();
     }
+
+    @Override
+    public List<ResearchPaper> searchByFullText(String query, int limit, int offset) {
+        int page = offset / limit;
+        PageRequest pageRequest = PageRequest.of(page, limit);
+        return paperJpaRepository.searchByFullText(query, pageRequest).stream()
+                .map(paperMapper::toDomain)
+                .toList();
+    }
 }

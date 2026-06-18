@@ -86,4 +86,13 @@ public class EventPersistenceAdapter implements EventRepository {
     public List<UUID> findRegisteredEventIds(List<UUID> eventIds, UUID userId) {
         return eventJpaRepository.findRegisteredEventIds(eventIds, userId);
     }
+
+    @Override
+    public List<UniversityEvent> searchByFullText(String query, int limit, int offset) {
+        int page = offset / limit;
+        PageRequest pageRequest = PageRequest.of(page, limit);
+        return eventJpaRepository.searchByFullText(query, pageRequest).stream()
+                .map(eventMapper::toDomain)
+                .toList();
+    }
 }

@@ -27,6 +27,8 @@ type Query {
 
   # Búsqueda
   searchPosts(query: String!, limit: Int = 20, offset: Int = 0): [FeedPost!]!
+  searchEvents(query: String!, limit: Int = 20, offset: Int = 0): [UniversityEvent!]!
+  searchPapers(query: String!, limit: Int = 20, offset: Int = 0): [ResearchPaper!]!
 
   # Estadísticas para Administración
   adminStats: AdminStats!

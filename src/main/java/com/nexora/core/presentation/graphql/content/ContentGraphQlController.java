@@ -15,11 +15,13 @@ import com.nexora.core.domain.user.aggregates.Profile;
 import com.nexora.core.application.content.usecases.feed.queries.SearchPostsUseCase;
 import com.nexora.core.application.content.usecases.papers.queries.GetPapersUseCase;
 import com.nexora.core.application.content.usecases.papers.queries.GetPaperBySlugUseCase;
+import com.nexora.core.application.content.usecases.papers.queries.SearchPapersUseCase;
 import com.nexora.core.application.content.usecases.papers.commands.IncrementPaperViewsUseCase;
 import com.nexora.core.application.content.usecases.papers.commands.CreatePaperUseCase;
 import com.nexora.core.application.content.usecases.papers.commands.EditPaperUseCase;
 import com.nexora.core.application.content.usecases.papers.commands.DeletePaperUseCase;
 import com.nexora.core.application.content.usecases.events.queries.GetEventsUseCase;
+import com.nexora.core.application.content.usecases.events.queries.SearchEventsUseCase;
 import com.nexora.core.application.content.usecases.events.commands.ConfirmRSVPUseCase;
 import com.nexora.core.application.content.usecases.events.commands.CreateEventUseCase;
 import com.nexora.core.application.content.usecases.events.commands.EditEventUseCase;
@@ -45,6 +47,8 @@ public class ContentGraphQlController {
     private final EditPaperUseCase editPaperUseCase;
     private final DeletePaperUseCase deletePaperUseCase;
     private final SearchPostsUseCase searchPostsUseCase;
+    private final SearchEventsUseCase searchEventsUseCase;
+    private final SearchPapersUseCase searchPapersUseCase;
     private final GetEventsUseCase getEventsUseCase;
     private final ConfirmRSVPUseCase confirmRSVPUseCase;
     private final CreateEventUseCase createEventUseCase;
@@ -117,6 +121,16 @@ public class ContentGraphQlController {
                     post.getImageUrl()
             );
         }).toList();
+    }
+
+    @QueryMapping
+    public List<UniversityEvent> searchEvents(@Argument String query, @Argument int limit, @Argument int offset) {
+        return searchEventsUseCase.execute(query, limit, offset);
+    }
+
+    @QueryMapping
+    public List<ResearchPaper> searchPapers(@Argument String query, @Argument int limit, @Argument int offset) {
+        return searchPapersUseCase.execute(query, limit, offset);
     }
 
     @MutationMapping

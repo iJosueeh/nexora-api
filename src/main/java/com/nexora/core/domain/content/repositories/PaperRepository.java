@@ -13,4 +13,5 @@ public interface PaperRepository {
     ResearchPaper save(ResearchPaper paper);
     void deleteById(UUID id);
     long count(String faculty);
+    List<ResearchPaper> searchByFullText(String query, int limit, int offset);
 }

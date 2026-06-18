@@ -15,4 +15,5 @@ public interface EventRepository {
     boolean existsBySlug(String slug);
     long count();
     List<UUID> findRegisteredEventIds(List<UUID> eventIds, UUID userId);
+    List<UniversityEvent> searchByFullText(String query, int limit, int offset);
 }
