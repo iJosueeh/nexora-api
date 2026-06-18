@@ -14,7 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.nexora.core.application.content.services.impl.UniversityEventServiceImpl;
+import com.nexora.core.application.content.usecases.events.commands.ConfirmRSVPUseCase;
 import com.nexora.core.domain.content.aggregates.UniversityEvent;
 import com.nexora.core.domain.content.repositories.EventRepository;
 import com.nexora.core.domain.user.aggregates.User;
@@ -30,7 +30,7 @@ class UniversityEventServiceImplTest {
     private UserRepository userRepository;
 
     @InjectMocks
-    private UniversityEventServiceImpl eventService;
+    private ConfirmRSVPUseCase confirmRSVPUseCase;
 
     private UUID eventId;
     private UUID userId;
@@ -56,7 +56,7 @@ class UniversityEventServiceImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(eventRepository.save(any(UniversityEvent.class))).thenReturn(event);
 
-        UniversityEvent updatedEvent = eventService.confirmRSVP(eventId, userId);
+        UniversityEvent updatedEvent = confirmRSVPUseCase.execute(eventId, userId);
 
         assertNotNull(updatedEvent);
         assertTrue(updatedEvent.getAttendeeIds().contains(userId));
@@ -70,7 +70,7 @@ class UniversityEventServiceImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            eventService.confirmRSVP(eventId, userId);
+            confirmRSVPUseCase.execute(eventId, userId);
         });
 
         assertEquals("Ya estás registrado en este evento", exception.getMessage());
@@ -85,7 +85,7 @@ class UniversityEventServiceImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            eventService.confirmRSVP(eventId, userId);
+            confirmRSVPUseCase.execute(eventId, userId);
         });
 
         assertEquals("Ya estás registrado en este evento", exception.getMessage());
@@ -97,7 +97,7 @@ class UniversityEventServiceImplTest {
         when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
 
         assertThrows(RuntimeException.class, () -> {
-            eventService.confirmRSVP(eventId, userId);
+            confirmRSVPUseCase.execute(eventId, userId);
         });
     }
 }

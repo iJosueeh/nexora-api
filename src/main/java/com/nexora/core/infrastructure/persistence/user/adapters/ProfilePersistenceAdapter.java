@@ -2,9 +2,11 @@ package com.nexora.core.infrastructure.persistence.user.adapters;
 
 import com.nexora.core.domain.user.aggregates.Profile;
 import com.nexora.core.domain.user.repositories.ProfileRepository;
+import com.nexora.core.infrastructure.persistence.user.entities.CourseJpaEntity;
 import com.nexora.core.infrastructure.persistence.user.entities.ProfileJpaEntity;
 import com.nexora.core.infrastructure.persistence.user.mappers.ProfileMapper;
 import com.nexora.core.infrastructure.persistence.user.repositories.ProfileJpaRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +20,7 @@ public class ProfilePersistenceAdapter implements ProfileRepository {
 
     private final ProfileJpaRepository profileJpaRepository;
     private final ProfileMapper profileMapper;
+    private final EntityManager entityManager;
 
     @Override
     public Optional<Profile> findById(UUID id) {
@@ -44,8 +47,18 @@ public class ProfilePersistenceAdapter implements ProfileRepository {
     @Override
     public Profile save(Profile profile) {
         ProfileJpaEntity entity = profileMapper.toJpa(profile);
+        resolveCareer(profile, entity);
         ProfileJpaEntity saved = profileJpaRepository.save(entity);
         return profileMapper.toDomain(saved);
+    }
+
+    private void resolveCareer(Profile profile, ProfileJpaEntity entity) {
+        if (profile.getCareer() != null) {
+            entity.setCarrera(entityManager.getReference(
+                    CourseJpaEntity.class, profile.getCareer().id()));
+        } else {
+            entity.setCarrera(null);
+        }
     }
 
     @Override

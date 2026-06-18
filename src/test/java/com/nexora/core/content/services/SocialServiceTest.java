@@ -1,7 +1,8 @@
 package com.nexora.core.content.services;
 
-import com.nexora.core.application.auth.services.AuthService;
-import com.nexora.core.application.content.services.SocialService;
+import com.nexora.core.application.content.usecases.social.commands.ToggleFollowUseCase;
+import com.nexora.core.application.content.usecases.social.queries.GetFollowersUseCase;
+import com.nexora.core.application.content.usecases.social.queries.GetFollowingUseCase;
 import com.nexora.core.domain.content.aggregates.Follow;
 import com.nexora.core.domain.content.repositories.FollowRepository;
 import com.nexora.core.domain.user.aggregates.Profile;
@@ -10,7 +11,7 @@ import com.nexora.core.domain.user.repositories.ProfileRepository;
 import com.nexora.core.domain.user.repositories.UserRepository;
 import com.nexora.core.domain.user.valueobjects.*;
 import com.nexora.core.application.security.services.SecurityService;
-import com.nexora.core.presentation.graphql.dto.ProfileView;
+import com.nexora.core.application.auth.dto.ProfileView;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,11 +38,13 @@ class SocialServiceTest {
     private UserRepository userRepository;
     @Mock
     private SecurityService securityService;
-    @Mock
-    private AuthService authService;
 
     @InjectMocks
-    private SocialService socialService;
+    private ToggleFollowUseCase toggleFollowUseCase;
+    @InjectMocks
+    private GetFollowersUseCase getFollowersUseCase;
+    @InjectMocks
+    private GetFollowingUseCase getFollowingUseCase;
 
     private UUID currentUserId;
     private UUID targetUserId;
@@ -57,7 +60,7 @@ class SocialServiceTest {
         when(securityService.getCurrentUserId()).thenReturn(currentUserId);
         when(followRepository.existsByFollowerIdAndFollowingId(currentUserId, targetUserId)).thenReturn(true);
 
-        boolean result = socialService.toggleFollow(targetUserId);
+        boolean result = toggleFollowUseCase.execute(targetUserId);
 
         assertFalse(result);
         verify(followRepository).deleteByFollowerIdAndFollowingId(currentUserId, targetUserId);
@@ -70,7 +73,7 @@ class SocialServiceTest {
         when(securityService.getCurrentUserId()).thenReturn(currentUserId);
         when(followRepository.existsByFollowerIdAndFollowingId(currentUserId, targetUserId)).thenReturn(false);
 
-        boolean result = socialService.toggleFollow(targetUserId);
+        boolean result = toggleFollowUseCase.execute(targetUserId);
 
         assertTrue(result);
         verify(followRepository).save(any(Follow.class));
@@ -82,7 +85,7 @@ class SocialServiceTest {
     void toggleFollowShouldThrowExceptionWhenFollowingSelf() {
         when(securityService.getCurrentUserId()).thenReturn(currentUserId);
 
-        assertThrows(IllegalArgumentException.class, () -> socialService.toggleFollow(currentUserId));
+        assertThrows(IllegalArgumentException.class, () -> toggleFollowUseCase.execute(currentUserId));
         verifyNoInteractions(followRepository);
     }
 
@@ -112,7 +115,7 @@ class SocialServiceTest {
         when(followRepository.findFollowingIdsByFollowerIdAndFollowingIdsIn(currentUserId, List.of(followerUserId)))
                 .thenReturn(List.of(followerUserId));
 
-        List<ProfileView> result = socialService.getFollowers(userId);
+        List<ProfileView> result = getFollowersUseCase.execute(userId);
 
         assertEquals(1, result.size());
         ProfileView view = result.get(0);
@@ -152,7 +155,7 @@ class SocialServiceTest {
         when(followRepository.findFollowingIdsByFollowerIdAndFollowingIdsIn(currentUserId, List.of(followingUserId)))
                 .thenReturn(List.of());
 
-        List<ProfileView> result = socialService.getFollowing(userId);
+        List<ProfileView> result = getFollowingUseCase.execute(userId);
 
         assertEquals(1, result.size());
         ProfileView view = result.get(0);

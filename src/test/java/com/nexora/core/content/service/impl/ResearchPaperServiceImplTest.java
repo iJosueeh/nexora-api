@@ -12,7 +12,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.nexora.core.application.content.services.impl.ResearchPaperServiceImpl;
+import com.nexora.core.application.content.usecases.papers.commands.SavePaperUseCase;
+import com.nexora.core.application.content.usecases.papers.commands.IncrementPaperViewsUseCase;
+import com.nexora.core.application.content.usecases.papers.queries.GetPaperBySlugUseCase;
 import com.nexora.core.domain.content.aggregates.ResearchPaper;
 import com.nexora.core.domain.content.repositories.PaperRepository;
 
@@ -22,17 +24,24 @@ class ResearchPaperServiceImplTest {
     @Mock
     private PaperRepository paperRepository;
 
+    @Mock
+    private GetPaperBySlugUseCase getPaperBySlugUseCase;
+
+    @Mock
+    private SavePaperUseCase savePaperUseCase;
+
     @InjectMocks
-    private ResearchPaperServiceImpl researchService;
+    private IncrementPaperViewsUseCase incrementPaperViewsUseCase;
 
     @Test
     void save_GeneratesSlug() {
+        SavePaperUseCase realSaveUseCase = new SavePaperUseCase(paperRepository);
         ResearchPaper paper = ResearchPaper.create(null, "Optimización de Algoritmos en IA",
                 "Summary", "Facultad", UUID.randomUUID(), null);
 
         when(paperRepository.save(any(ResearchPaper.class))).thenAnswer(i -> i.getArguments()[0]);
 
-        ResearchPaper savedPaper = researchService.save(paper);
+        ResearchPaper savedPaper = realSaveUseCase.execute(paper);
 
         assertNotNull(savedPaper.getSlug());
         assertEquals("optimizacion-de-algoritmos-en-ia", savedPaper.getSlug());
@@ -46,12 +55,12 @@ class ResearchPaperServiceImplTest {
         ResearchPaper paper = ResearchPaper.create(slug, "Title", "Summary", "Facultad", authorId, null);
         paper.setViews(10);
 
-        when(paperRepository.findBySlug(slug)).thenReturn(Optional.of(paper));
-        when(paperRepository.save(any(ResearchPaper.class))).thenReturn(paper);
+        when(getPaperBySlugUseCase.execute(slug)).thenReturn(Optional.of(paper));
 
-        researchService.incrementViews(slug);
+        incrementPaperViewsUseCase.execute(slug);
 
         assertEquals(11, paper.getViews());
-        verify(paperRepository, times(1)).save(paper);
+        verify(getPaperBySlugUseCase, times(1)).execute(slug);
+        verify(savePaperUseCase, times(1)).execute(paper);
     }
 }

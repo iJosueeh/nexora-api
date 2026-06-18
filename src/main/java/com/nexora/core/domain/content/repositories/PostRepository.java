@@ -12,6 +12,8 @@ public interface PostRepository {
     List<Post> findAllByOrderByCreatedAtDesc();
     Page<Post> findAllByOrderByCreatedAtDesc(Pageable pageable);
     Optional<Post> findById(UUID id);
+    List<Post> findAllByIdIn(List<UUID> ids);
+    List<Post> searchByFullText(String query, int limit, int offset);
     Post save(Post post);
     void deleteById(UUID id);
     long count();

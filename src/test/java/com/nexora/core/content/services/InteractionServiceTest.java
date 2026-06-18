@@ -1,6 +1,6 @@
 package com.nexora.core.content.services;
 
-import com.nexora.core.application.content.services.InteractionService;
+import com.nexora.core.application.content.usecases.interaction.commands.TogglePostLikeUseCase;
 import com.nexora.core.domain.content.repositories.LikeRepository;
 import com.nexora.core.application.security.services.SecurityService;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +25,7 @@ class InteractionServiceTest {
     private SecurityService securityService;
 
     @InjectMocks
-    private InteractionService interactionService;
+    private TogglePostLikeUseCase togglePostLikeUseCase;
 
     private UUID userId;
     private UUID postId;
@@ -41,7 +41,7 @@ class InteractionServiceTest {
         when(securityService.getCurrentUserId()).thenReturn(userId);
         when(likeRepository.existsPostLike(postId, userId)).thenReturn(true);
 
-        boolean result = interactionService.toggleLike(postId);
+        boolean result = togglePostLikeUseCase.execute(postId);
 
         assertFalse(result);
         verify(likeRepository).removePostLike(postId, userId);
@@ -53,7 +53,7 @@ class InteractionServiceTest {
         when(securityService.getCurrentUserId()).thenReturn(userId);
         when(likeRepository.existsPostLike(postId, userId)).thenReturn(false);
 
-        boolean result = interactionService.toggleLike(postId);
+        boolean result = togglePostLikeUseCase.execute(postId);
 
         assertTrue(result);
         verify(likeRepository).addPostLike(postId, userId);

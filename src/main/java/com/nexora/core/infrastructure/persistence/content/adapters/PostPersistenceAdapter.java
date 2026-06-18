@@ -7,6 +7,7 @@ import com.nexora.core.infrastructure.persistence.content.mappers.PostMapper;
 import com.nexora.core.infrastructure.persistence.content.repositories.PostJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +38,20 @@ public class PostPersistenceAdapter implements PostRepository {
     @Override
     public Optional<Post> findById(UUID id) {
         return postJpaRepository.findById(id).map(postMapper::toDomain);
+    }
+
+    @Override
+    public List<Post> findAllByIdIn(List<UUID> ids) {
+        return postJpaRepository.findAllById(ids).stream()
+                .map(postMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Post> searchByFullText(String query, int limit, int offset) {
+        return postJpaRepository.searchByFullText(query, PageRequest.of(offset / limit, limit)).stream()
+                .map(postMapper::toDomain)
+                .toList();
     }
 
     @Override

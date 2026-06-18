@@ -6,11 +6,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
-import com.nexora.core.presentation.rest.auth.dto.AuthResponse;
-import com.nexora.core.presentation.rest.auth.dto.RegistrationCatalogsResponse;
+import com.nexora.core.application.auth.dto.AuthResponse;
+import com.nexora.core.application.auth.dto.RegistrationCatalogsResponse;
 import com.nexora.core.presentation.rest.auth.dto.RegisterUpdateRequest;
-import com.nexora.core.application.auth.services.AuthService;
+import com.nexora.core.application.auth.usecases.commands.CompleteRegistrationUseCase;
+import com.nexora.core.application.auth.usecases.commands.ResolveSessionUseCase;
+import com.nexora.core.application.auth.usecases.queries.GetPublicProfileUseCase;
+import com.nexora.core.application.auth.usecases.queries.GetRegistrationCatalogsUseCase;
 import com.nexora.core.common.response.ApiResponse;
 
 import jakarta.validation.Valid;
@@ -25,7 +29,10 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Autenticación", description = "Endpoints para la autenticación de usuarios y gestión de sesiones")
 public class AuthController {
 
-    private final AuthService authService;
+    private final CompleteRegistrationUseCase completeRegistrationUseCase;
+    private final ResolveSessionUseCase resolveSessionUseCase;
+    private final GetPublicProfileUseCase getPublicProfileUseCase;
+    private final GetRegistrationCatalogsUseCase getRegistrationCatalogsUseCase;
 
     @Operation(summary = "Completar registro de usuario", description = "Actualiza la información del perfil e intereses de un nuevo usuario.")
     @PutMapping("/register")
@@ -34,7 +41,7 @@ public class AuthController {
             @RequestBody @Valid RegisterUpdateRequest request) {
 
         String email = jwt.getClaimAsString("email");
-        AuthResponse authResponse = authService.completeRegistration(email, request);
+        AuthResponse authResponse = completeRegistrationUseCase.execute(email, request);
 
         return ResponseEntity.ok(ApiResponse.<AuthResponse>builder()
                 .success(true)
@@ -46,7 +53,7 @@ public class AuthController {
     @Operation(summary = "Obtener catálogos de registro", description = "Recupera las carreras e intereses académicos necesarios para el registro.")
     @GetMapping("/catalogs")
     public ResponseEntity<ApiResponse<RegistrationCatalogsResponse>> registrationCatalogs() {
-        RegistrationCatalogsResponse catalogs = authService.getRegistrationCatalogs();
+        RegistrationCatalogsResponse catalogs = getRegistrationCatalogsUseCase.execute();
 
         return ResponseEntity.ok(ApiResponse.<RegistrationCatalogsResponse>builder()
                 .success(true)
@@ -59,8 +66,11 @@ public class AuthController {
     @GetMapping("/session")
     public ResponseEntity<ApiResponse<AuthResponse>> session(@AuthenticationPrincipal Jwt jwt) {
         String email = jwt.getClaimAsString("email");
+        if (email == null || email.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email not found in token");
+        }
         String supabaseUserId = jwt.getSubject();
-        AuthResponse authResponse = authService.resolveSession(email, supabaseUserId);
+        AuthResponse authResponse = resolveSessionUseCase.execute(email, supabaseUserId);
 
         return ResponseEntity.ok(ApiResponse.<AuthResponse>builder()
                 .success(true)
@@ -76,7 +86,7 @@ public class AuthController {
             @AuthenticationPrincipal Jwt jwt) {
         
         String viewerEmail = jwt != null ? jwt.getClaimAsString("email") : null;
-        AuthResponse authResponse = authService.resolvePublicProfile(username, viewerEmail);
+        AuthResponse authResponse = getPublicProfileUseCase.execute(username, viewerEmail);
 
         return ResponseEntity.ok(ApiResponse.<AuthResponse>builder()
                 .success(true)

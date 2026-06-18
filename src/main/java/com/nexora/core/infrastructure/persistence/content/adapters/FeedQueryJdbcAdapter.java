@@ -1,6 +1,6 @@
 package com.nexora.core.infrastructure.persistence.content.adapters;
 
-import com.nexora.core.presentation.graphql.dto.*;
+import com.nexora.core.application.content.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;

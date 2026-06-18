@@ -3,6 +3,9 @@ package com.nexora.core.infrastructure.persistence.user.entities;
 import com.nexora.core.infrastructure.persistence.common.entities.AuditableJpaEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,8 +29,9 @@ public class UserJpaEntity extends AuditableJpaEntity {
     @Builder.Default
     private Boolean isActive = true;
 
-    @Column(name = "role", nullable = false)
-    private String role;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id")
+    private RoleJpaEntity role;
 
     @Column(name = "supabase_id")
     private String supabaseId;

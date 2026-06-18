@@ -8,32 +8,46 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 
-import com.nexora.core.presentation.graphql.dto.CommentThreadView;
-import com.nexora.core.presentation.graphql.dto.FeedPostView;
-import com.nexora.core.presentation.graphql.dto.TagSuggestionView;
-import com.nexora.core.presentation.graphql.dto.TrendingTopicView;
+import com.nexora.core.application.content.dto.CommentThreadView;
+import com.nexora.core.application.content.dto.FeedPostView;
+import com.nexora.core.application.content.dto.TagSuggestionView;
+import com.nexora.core.application.content.dto.TrendingTopicView;
+import com.nexora.core.application.auth.dto.ProfileView;
+import com.nexora.core.application.content.usecases.social.queries.GetFollowersUseCase;
+import com.nexora.core.application.content.usecases.social.queries.GetFollowingUseCase;
+import com.nexora.core.application.content.usecases.feed.queries.GetFeedUseCase;
+import com.nexora.core.application.content.usecases.feed.queries.GetUserPostsUseCase;
+import com.nexora.core.application.content.usecases.feed.queries.GetPostByIdUseCase;
+import com.nexora.core.application.content.usecases.feed.queries.GetCommentThreadsUseCase;
+import com.nexora.core.application.content.usecases.feed.queries.GetTagsUseCase;
+import com.nexora.core.application.content.usecases.feed.queries.GetTrendingTopicsUseCase;
 
 import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
-public class        NexoraQueryController {
+public class NexoraQueryController {
 
     private static final int MAX_OFFSET = 10_000;
     private static final int MAX_TAG_LIMIT = 30;
 
-    private final FeedQueryService feedQueryService;
-
-    private final com.nexora.core.application.content.services.SocialService socialService;
+    private final GetFeedUseCase getFeedUseCase;
+    private final GetUserPostsUseCase getUserPostsUseCase;
+    private final GetPostByIdUseCase getPostByIdUseCase;
+    private final GetCommentThreadsUseCase getCommentThreadsUseCase;
+    private final GetTagsUseCase getTagsUseCase;
+    private final GetTrendingTopicsUseCase getTrendingTopicsUseCase;
+    private final GetFollowersUseCase getFollowersUseCase;
+    private final GetFollowingUseCase getFollowingUseCase;
 
     @QueryMapping
-    public List<com.nexora.core.presentation.graphql.dto.ProfileView> followers(@Argument UUID userId) {
-        return socialService.getFollowers(userId);
+    public List<ProfileView> followers(@Argument UUID userId) {
+        return getFollowersUseCase.execute(userId);
     }
 
     @QueryMapping
-    public List<com.nexora.core.presentation.graphql.dto.ProfileView> following(@Argument UUID userId) {
-        return socialService.getFollowing(userId);
+    public List<ProfileView> following(@Argument UUID userId) {
+        return getFollowingUseCase.execute(userId);
     }
 
     @QueryMapping
@@ -45,13 +59,13 @@ public class        NexoraQueryController {
     public List<FeedPostView> obtenerFeedPrincipal(@Argument Integer limit, @Argument Integer offset) {
         int safeLimit = limit == null ? 20 : Math.max(1, Math.min(limit, 100));
         int safeOffset = offset == null ? 0 : Math.max(0, Math.min(offset, MAX_OFFSET));
-        return feedQueryService.obtenerFeedPrincipal(safeLimit, safeOffset);
+        return getFeedUseCase.execute(safeLimit, safeOffset);
     }
 
     @QueryMapping
     public FeedPostView obtenerPublicacionPorId(@Argument UUID postId) {
         if (postId == null) return null;
-        return feedQueryService.obtenerPublicacionPorId(postId);
+        return getPostByIdUseCase.execute(postId);
     }
 
     @QueryMapping
@@ -65,12 +79,12 @@ public class        NexoraQueryController {
             return List.of();
         }
 
-        return feedQueryService.obtenerPublicacionesPorUsuario(safeUsername, safeLimit, safeOffset);
+        return getUserPostsUseCase.execute(safeUsername, safeLimit, safeOffset);
     }
 
     @QueryMapping
     public List<CommentThreadView> comentariosPorPost(@Argument UUID postId) {
-        return feedQueryService.obtenerHilosComentarios(postId);
+        return getCommentThreadsUseCase.execute(postId);
     }
 
     @SchemaMapping(typeName = "CommentThread", field = "respuestas")
@@ -82,12 +96,12 @@ public class        NexoraQueryController {
     public List<TagSuggestionView> availableTags(@Argument String search, @Argument Integer limit) {
         int safeLimit = limit == null ? 12 : Math.max(1, Math.min(limit, MAX_TAG_LIMIT));
         String safeSearch = search == null ? "" : search.trim().toLowerCase();
-        return feedQueryService.obtenerTagsDisponibles(safeSearch, safeLimit);
+        return getTagsUseCase.execute(safeSearch, safeLimit);
     }
 
     @QueryMapping
     public List<TrendingTopicView> trendingTopics(@Argument Integer limit) {
         int safeLimit = limit == null ? 10 : Math.max(1, Math.min(limit, 50));
-        return feedQueryService.obtenerTrendingTopics(safeLimit);
+        return getTrendingTopicsUseCase.execute(safeLimit);
     }
 }

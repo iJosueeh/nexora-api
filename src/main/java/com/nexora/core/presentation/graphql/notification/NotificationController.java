@@ -1,7 +1,10 @@
 package com.nexora.core.presentation.graphql.notification;
 
+import com.nexora.core.application.notification.ports.NotificationViewRepository;
+import com.nexora.core.application.notification.usecases.commands.MarkAllNotificationsReadUseCase;
+import com.nexora.core.application.notification.usecases.commands.MarkNotificationReadUseCase;
+import com.nexora.core.application.security.services.SecurityService;
 import com.nexora.core.presentation.graphql.notification.dto.NotificationView;
-import com.nexora.core.application.notification.services.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -15,28 +18,32 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class NotificationController {
 
-    private final NotificationQueryService notificationQueryService;
-    private final NotificationService notificationService;
+    private final NotificationViewRepository notificationViewRepository;
+    private final SecurityService securityService;
+    private final MarkNotificationReadUseCase markNotificationReadUseCase;
+    private final MarkAllNotificationsReadUseCase markAllNotificationsReadUseCase;
 
     @QueryMapping
     public List<NotificationView> notificationHistory(@Argument Integer limit, @Argument Integer offset) {
         int safeLimit = limit == null ? 20 : Math.max(1, Math.min(limit, 100));
         int safeOffset = offset == null ? 0 : Math.max(0, offset);
-        return notificationQueryService.getNotificationHistory(safeLimit, safeOffset);
+        UUID currentUserId = securityService.getCurrentUserId();
+        return notificationViewRepository.findNotificationHistory(currentUserId, safeLimit, safeOffset);
     }
 
     @QueryMapping
     public int unreadNotificationsCount() {
-        return (int) notificationQueryService.getUnreadCount();
+        UUID currentUserId = securityService.getCurrentUserId();
+        return (int) notificationViewRepository.countUnread(currentUserId);
     }
 
     @MutationMapping
     public boolean markNotificationAsRead(@Argument UUID notificationId) {
-        return notificationService.markAsRead(notificationId);
+        return markNotificationReadUseCase.execute(notificationId);
     }
 
     @MutationMapping
     public boolean markAllNotificationsAsRead() {
-        return notificationService.markAllAsRead();
+        return markAllNotificationsReadUseCase.execute();
     }
 }

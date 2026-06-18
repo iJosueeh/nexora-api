@@ -13,10 +13,15 @@ public class UserMapper {
     public User toDomain(UserJpaEntity entity) {
         if (entity == null) return null;
 
+        UserRole role = null;
+        if (entity.getRole() != null && entity.getRole().getName() != null) {
+            role = UserRole.valueOf(entity.getRole().getName());
+        }
+
         return User.builder()
                 .id(entity.getId())
                 .email(new Email(entity.getEmail()))
-                .role(UserRole.valueOf(entity.getRole()))
+                .role(role)
                 .isActive(entity.getIsActive())
                 .supabaseId(entity.getSupabaseId() != null ? new SupabaseId(entity.getSupabaseId()) : null)
                 .createdAt(entity.getCreatedAt())
@@ -29,7 +34,6 @@ public class UserMapper {
 
         UserJpaEntity entity = UserJpaEntity.builder()
                 .email(domain.getEmail().value())
-                .role(domain.getRole().name())
                 .isActive(domain.getIsActive())
                 .supabaseId(domain.getSupabaseId() != null ? domain.getSupabaseId().value() : null)
                 .build();

@@ -11,50 +11,133 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 import com.nexora.core.domain.content.aggregates.ResearchPaper;
 import com.nexora.core.domain.content.aggregates.UniversityEvent;
-import com.nexora.core.application.content.services.ResearchPaperService;
-import com.nexora.core.application.content.services.UniversityEventService;
-import com.nexora.core.infrastructure.persistence.user.repositories.ProfileJpaRepository;
-import com.nexora.core.presentation.graphql.dto.FeedAuthorView;
+import com.nexora.core.domain.user.aggregates.Profile;
+import com.nexora.core.application.content.usecases.feed.queries.SearchPostsUseCase;
+import com.nexora.core.application.content.usecases.papers.queries.GetPapersUseCase;
+import com.nexora.core.application.content.usecases.papers.queries.GetPaperBySlugUseCase;
+import com.nexora.core.application.content.usecases.papers.commands.IncrementPaperViewsUseCase;
+import com.nexora.core.application.content.usecases.events.queries.GetEventsUseCase;
+import com.nexora.core.application.content.usecases.events.commands.ConfirmRSVPUseCase;
+import com.nexora.core.application.content.usecases.events.commands.CreateEventUseCase;
+import com.nexora.core.application.content.usecases.events.commands.EditEventUseCase;
+import com.nexora.core.application.content.usecases.events.commands.DeleteEventUseCase;
+import com.nexora.core.application.content.usecases.events.queries.CheckBatchRegistrationUseCase;
+import com.nexora.core.domain.user.repositories.ProfileRepository;
+import com.nexora.core.application.content.dto.FeedAuthorView;
 import com.nexora.core.application.security.services.SecurityService;
+import com.nexora.core.presentation.graphql.dto.CreateEventInput;
+import com.nexora.core.presentation.graphql.dto.UpdateEventInput;
 import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
 public class ContentGraphQlController {
 
-    private final ResearchPaperService researchService;
-    private final UniversityEventService eventService;
+    private final GetPapersUseCase getPapersUseCase;
+    private final GetPaperBySlugUseCase getPaperBySlugUseCase;
+    private final IncrementPaperViewsUseCase incrementPaperViewsUseCase;
+    private final SearchPostsUseCase searchPostsUseCase;
+    private final GetEventsUseCase getEventsUseCase;
+    private final ConfirmRSVPUseCase confirmRSVPUseCase;
+    private final CreateEventUseCase createEventUseCase;
+    private final EditEventUseCase editEventUseCase;
+    private final DeleteEventUseCase deleteEventUseCase;
+    private final CheckBatchRegistrationUseCase checkBatchRegistrationUseCase;
     private final SecurityService securityService;
-    private final ProfileJpaRepository profileJpaRepository;
+    private final ProfileRepository profileRepository;
 
     @QueryMapping
     public List<ResearchPaper> researchPapers(@Argument int limit, @Argument int offset, @Argument String faculty) {
-        return researchService.findAll(limit, offset, faculty);
+        return getPapersUseCase.execute(limit, offset, faculty);
     }
 
     @QueryMapping
     public ResearchPaper researchBySlug(@Argument String slug) {
-        ResearchPaper paper = researchService.findBySlug(slug)
+        ResearchPaper paper = getPaperBySlugUseCase.execute(slug)
                 .orElseThrow(() -> new RuntimeException("Investigación no encontrada"));
-        researchService.incrementViews(slug);
+        incrementPaperViewsUseCase.execute(slug);
         return paper;
     }
 
     @QueryMapping
     public List<UniversityEvent> universityEvents(@Argument int limit, @Argument int offset, @Argument String category) {
-        return eventService.findAll(limit, offset, category);
+        return getEventsUseCase.findAll(limit, offset, category);
     }
 
     @QueryMapping
     public UniversityEvent eventBySlug(@Argument String slug) {
-        return eventService.findBySlug(slug)
+        return getEventsUseCase.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+    }
+
+    @QueryMapping
+    public UniversityEvent eventById(@Argument UUID id) {
+        return getEventsUseCase.findById(id)
+                .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+    }
+
+    @QueryMapping
+    public List<com.nexora.core.application.content.dto.FeedPostView> searchPosts(@Argument String query, @Argument int limit, @Argument int offset) {
+        List<com.nexora.core.domain.content.aggregates.Post> posts = searchPostsUseCase.execute(query, limit, offset);
+        UUID currentUserId = null;
+        try {
+            currentUserId = securityService.getCurrentUserId();
+        } catch (Exception ignored) {}
+
+        List<UUID> authorIds = posts.stream().map(p -> p.getAutor().getId()).distinct().toList();
+        java.util.Map<UUID, Profile> profileMap = profileRepository.findByUserIdIn(authorIds).stream()
+                .collect(java.util.stream.Collectors.toMap(Profile::getUserId, p -> p));
+
+        return posts.stream().map(post -> {
+            Profile profile = profileMap.get(post.getAutor().getId());
+            FeedAuthorView autor = new FeedAuthorView(
+                    post.getAutor().getId(),
+                    profile != null && profile.getUsername() != null ? profile.getUsername().value() : null,
+                    profile != null && profile.getFullName() != null ? profile.getFullName().value() : "Sin nombre",
+                    profile != null ? profile.getAvatarUrl() : null
+            );
+            return new com.nexora.core.application.content.dto.FeedPostView(
+                    post.getId(),
+                    post.getTitulo(),
+                    post.getContent(),
+                    Boolean.TRUE.equals(post.getIsOfficial()),
+                    post.getCreatedAt() != null ? post.getCreatedAt().atOffset(java.time.ZoneOffset.UTC) : null,
+                    0, 0, false,
+                    autor,
+                    post.getTags() == null ? java.util.List.of() : java.util.List.copyOf(post.getTags()),
+                    post.getLocation(),
+                    post.getImageUrl()
+            );
+        }).toList();
     }
 
     @MutationMapping
     public UniversityEvent confirmRSVP(@Argument UUID eventId) {
         UUID userId = securityService.getCurrentUserId();
-        return eventService.confirmRSVP(eventId, userId);
+        return confirmRSVPUseCase.execute(eventId, userId);
+    }
+
+    @MutationMapping
+    public UniversityEvent crearEvento(@Argument CreateEventInput input) {
+        return createEventUseCase.execute(
+                input.title(), input.description(), input.date(),
+                input.location(), input.category(), input.image(),
+                input.organizerName(), input.organizerRole(),
+                input.whatsapp(), input.telegram(), input.discord());
+    }
+
+    @MutationMapping
+    public UniversityEvent editarEvento(@Argument UUID eventId, @Argument UpdateEventInput input) {
+        return editEventUseCase.execute(
+                eventId, input.title(), input.description(), input.date(),
+                input.location(), input.category(), input.image(),
+                input.organizerName(), input.organizerRole(),
+                input.whatsapp(), input.telegram(), input.discord());
+    }
+
+    @MutationMapping
+    public boolean eliminarEvento(@Argument UUID eventId) {
+        return deleteEventUseCase.execute(eventId);
     }
 
     @BatchMapping(typeName = "UniversityEvent", field = "isUserRegistered")
@@ -62,7 +145,7 @@ public class ContentGraphQlController {
         try {
             UUID userId = securityService.getCurrentUserId();
             List<UUID> eventIds = events.stream().map(UniversityEvent::getId).toList();
-            Map<UUID, Boolean> registrations = eventService.isUserRegisteredBatch(eventIds, userId);
+            Map<UUID, Boolean> registrations = checkBatchRegistrationUseCase.execute(eventIds, userId);
             return events.stream().collect(Collectors.toMap(
                 event -> event,
                 event -> registrations.getOrDefault(event.getId(), false)
@@ -83,10 +166,12 @@ public class ContentGraphQlController {
     @BatchMapping(typeName = "ResearchPaper", field = "author")
     public Map<ResearchPaper, FeedAuthorView> author(List<ResearchPaper> papers) {
         List<UUID> authorIds = papers.stream().map(ResearchPaper::getAuthorId).distinct().toList();
-        Map<UUID, FeedAuthorView> authorMap = profileJpaRepository.findByUserIdIn(authorIds).stream()
+        Map<UUID, FeedAuthorView> authorMap = profileRepository.findByUserIdIn(authorIds).stream()
                 .collect(Collectors.toMap(
-                    p -> p.getUserId(),
-                    p -> new FeedAuthorView(p.getUserId(), p.getUsername(), p.getFullName(), p.getAvatarUrl())
+                    Profile::getUserId,
+                    p -> new FeedAuthorView(p.getUserId(), p.getUsername().value(),
+                        p.getFullName() != null ? p.getFullName().value() : null,
+                        p.getAvatarUrl())
                 ));
         return papers.stream().collect(Collectors.toMap(
             paper -> paper,

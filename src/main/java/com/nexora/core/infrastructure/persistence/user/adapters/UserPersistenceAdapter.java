@@ -5,6 +5,7 @@ import com.nexora.core.domain.user.repositories.UserRepository;
 import com.nexora.core.domain.user.valueobjects.Email;
 import com.nexora.core.infrastructure.persistence.user.entities.UserJpaEntity;
 import com.nexora.core.infrastructure.persistence.user.mappers.UserMapper;
+import com.nexora.core.infrastructure.persistence.user.repositories.RoleJpaRepository;
 import com.nexora.core.infrastructure.persistence.user.repositories.UserJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,7 @@ public class UserPersistenceAdapter implements UserRepository {
 
     private final UserJpaRepository userJpaRepository;
     private final UserMapper userMapper;
+    private final RoleJpaRepository roleJpaRepository;
 
     @Override
     public Optional<User> findById(UUID id) {
@@ -47,8 +49,16 @@ public class UserPersistenceAdapter implements UserRepository {
     @Override
     public User save(User user) {
         UserJpaEntity entity = userMapper.toJpa(user);
+        resolveRoleReference(user, entity);
         UserJpaEntity saved = userJpaRepository.save(entity);
         return userMapper.toDomain(saved);
+    }
+
+    private void resolveRoleReference(User user, UserJpaEntity entity) {
+        if (user.getRole() != null) {
+            roleJpaRepository.findByName(user.getRole().name())
+                    .ifPresent(entity::setRole);
+        }
     }
 
     @Override

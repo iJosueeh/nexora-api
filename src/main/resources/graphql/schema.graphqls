@@ -15,10 +15,18 @@ type Query {
   
   universityEvents(limit: Int = 20, offset: Int = 0, category: String): [UniversityEvent!]!
   eventBySlug(slug: String!): UniversityEvent
+  eventById(id: ID!): UniversityEvent
 
   # Notificaciones
   notificationHistory(limit: Int = 20, offset: Int = 0): [Notification!]!
   unreadNotificationsCount: Int!
+
+  # Bookmarks
+  bookmarks(limit: Int = 20, offset: Int = 0): [FeedPost!]!
+  isBookmarked(postId: ID!): Boolean!
+
+  # Búsqueda
+  searchPosts(query: String!, limit: Int = 20, offset: Int = 0): [FeedPost!]!
 
   # Estadísticas para Administración
   adminStats: AdminStats!
@@ -27,6 +35,11 @@ type Query {
   allUsers(limit: Int = 20, offset: Int = 0, search: String = ""): [Profile!]!
   followers(userId: ID!): [Profile!]!
   following(userId: ID!): [Profile!]!
+
+  # Catálogos
+  faculties: [Faculty!]!
+  courses: [Course!]!
+  academicInterests: [AcademicInterest!]!
 }
 
 type AdminStats {
@@ -45,6 +58,7 @@ type RecentActivity {
 
 type Mutation {
   crearPublicacion(input: CreatePublicationInput!): FeedPost!
+  editarPublicacion(postId: ID!, input: UpdatePublicationInput!): FeedPost!
   actualizarPerfil(input: UpdateProfileInput!): Profile!
   
   # Comentarios
@@ -59,15 +73,33 @@ type Mutation {
 
   # Nuevas Mutaciones
   confirmRSVP(eventId: ID!): UniversityEvent!
+  crearEvento(input: CreateEventInput!): UniversityEvent!
+  editarEvento(eventId: ID!, input: UpdateEventInput!): UniversityEvent!
+  eliminarEvento(eventId: ID!): Boolean!
 
   # Notificaciones
   markNotificationAsRead(notificationId: ID!): Boolean!
   markAllNotificationsAsRead: Boolean!
 
+  # Bookmarks
+  toggleBookmark(postId: ID!): Boolean!
+
   # Gestión Administrativa
   updateUserStatus(userId: ID!, isActive: Boolean!): Profile!
   markPostAsOfficial(postId: ID!, isOfficial: Boolean!): FeedPost!
   deletePost(postId: ID!): Boolean!
+  updateProfileAdmin(userId: ID!, input: UpdateProfileInput!): Profile!
+
+  # Catálogos (Administración)
+  createFaculty(name: String!): Faculty!
+  updateFaculty(id: ID!, name: String!): Faculty!
+  deleteFaculty(id: ID!): Boolean!
+  createCourse(name: String!, facultyId: ID!): Course!
+  updateCourse(id: ID!, name: String!, facultyId: ID!): Course!
+  deleteCourse(id: ID!): Boolean!
+  createAcademicInterest(name: String!): AcademicInterest!
+  updateAcademicInterest(id: ID!, name: String!): AcademicInterest!
+  deleteAcademicInterest(id: ID!): Boolean!
 }
 
 input CreateCommentInput {
@@ -169,6 +201,34 @@ input UpdatePublicationInput {
   imageUrl: String
 }
 
+input CreateEventInput {
+  title: String!
+  description: String
+  date: String!
+  location: String
+  category: String
+  image: String
+  organizerName: String
+  organizerRole: String
+  whatsapp: String
+  telegram: String
+  discord: String
+}
+
+input UpdateEventInput {
+  title: String
+  description: String
+  date: String
+  location: String
+  category: String
+  image: String
+  organizerName: String
+  organizerRole: String
+  whatsapp: String
+  telegram: String
+  discord: String
+}
+
 type FeedPost {
   id: ID!
   titulo: String
@@ -222,4 +282,21 @@ type TrendingTopic {
   tags: [String!]!
   location: String
   imageUrl: String
+}
+
+# Tipos de Catálogos
+type Faculty {
+  id: ID!
+  name: String!
+}
+
+type Course {
+  id: ID!
+  name: String!
+  faculty: Faculty!
+}
+
+type AcademicInterest {
+  id: ID!
+  name: String!
 }

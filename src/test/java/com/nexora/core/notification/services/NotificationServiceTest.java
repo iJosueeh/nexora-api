@@ -1,6 +1,8 @@
 package com.nexora.core.notification.services;
 
-import com.nexora.core.application.notification.services.NotificationService;
+import com.nexora.core.application.notification.usecases.queries.GetUnreadCountUseCase;
+import com.nexora.core.application.notification.usecases.commands.MarkNotificationReadUseCase;
+import com.nexora.core.application.notification.usecases.commands.MarkAllNotificationsReadUseCase;
 import com.nexora.core.domain.notification.aggregates.Notification;
 import com.nexora.core.domain.notification.repositories.NotificationRepository;
 import com.nexora.core.domain.notification.valueobjects.NotificationType;
@@ -29,7 +31,11 @@ class NotificationServiceTest {
     private SecurityService securityService;
 
     @InjectMocks
-    private NotificationService notificationService;
+    private GetUnreadCountUseCase getUnreadCountUseCase;
+    @InjectMocks
+    private MarkNotificationReadUseCase markNotificationReadUseCase;
+    @InjectMocks
+    private MarkAllNotificationsReadUseCase markAllNotificationsReadUseCase;
 
     private UUID userId;
 
@@ -43,7 +49,7 @@ class NotificationServiceTest {
         when(securityService.getCurrentUserId()).thenReturn(userId);
         when(notificationRepository.countByUserIdAndIsReadFalse(userId)).thenReturn(5L);
 
-        long count = notificationService.getUnreadCount();
+        long count = getUnreadCountUseCase.execute();
 
         assertEquals(5L, count);
         verify(notificationRepository).countByUserIdAndIsReadFalse(userId);
@@ -58,7 +64,7 @@ class NotificationServiceTest {
         when(notificationRepository.findById(notifId)).thenReturn(Optional.of(notif));
         when(securityService.getCurrentUserId()).thenReturn(userId);
 
-        boolean result = notificationService.markAsRead(notifId);
+        boolean result = markNotificationReadUseCase.execute(notifId);
 
         assertTrue(result);
         assertTrue(notif.isRead());
@@ -74,7 +80,7 @@ class NotificationServiceTest {
         when(notificationRepository.findById(notifId)).thenReturn(Optional.of(notif));
         when(securityService.getCurrentUserId()).thenReturn(userId);
 
-        assertThrows(RuntimeException.class, () -> notificationService.markAsRead(notifId));
+        assertThrows(RuntimeException.class, () -> markNotificationReadUseCase.execute(notifId));
         verify(notificationRepository, never()).save(any());
     }
 
@@ -82,7 +88,7 @@ class NotificationServiceTest {
     void markAllAsReadShouldInvokeRepository() {
         when(securityService.getCurrentUserId()).thenReturn(userId);
 
-        boolean result = notificationService.markAllAsRead();
+        boolean result = markAllNotificationsReadUseCase.execute();
 
         assertTrue(result);
         verify(notificationRepository).markAllAsRead(userId);

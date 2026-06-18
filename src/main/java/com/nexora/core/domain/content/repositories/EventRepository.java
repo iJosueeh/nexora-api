@@ -11,6 +11,8 @@ public interface EventRepository {
     Optional<UniversityEvent> findBySlug(String slug);
     Optional<UniversityEvent> findById(UUID id);
     UniversityEvent save(UniversityEvent event);
+    void deleteById(UUID id);
+    boolean existsBySlug(String slug);
     long count();
     List<UUID> findRegisteredEventIds(List<UUID> eventIds, UUID userId);
 }

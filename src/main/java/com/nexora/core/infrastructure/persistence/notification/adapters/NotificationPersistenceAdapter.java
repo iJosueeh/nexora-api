@@ -28,8 +28,9 @@ public class NotificationPersistenceAdapter implements NotificationRepository {
     public List<Notification> findByUserIdOrderByCreatedAtDesc(UUID userId, int limit, int offset) {
         UserJpaEntity user = userJpaRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        int page = offset / limit;
-        PageRequest pageRequest = PageRequest.of(page, limit);
+        int safeLimit = Math.max(1, limit);
+        int page = offset / safeLimit;
+        PageRequest pageRequest = PageRequest.of(page, safeLimit);
         return notificationJpaRepository.findByUserOrderByCreatedAtDesc(user, pageRequest).stream()
                 .map(notificationMapper::toDomain)
                 .toList();

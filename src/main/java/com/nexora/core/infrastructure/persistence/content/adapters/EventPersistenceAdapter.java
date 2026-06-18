@@ -67,6 +67,17 @@ public class EventPersistenceAdapter implements EventRepository {
     }
 
     @Override
+    @Transactional
+    public void deleteById(UUID id) {
+        eventJpaRepository.deleteById(id);
+    }
+
+    @Override
+    public boolean existsBySlug(String slug) {
+        return eventJpaRepository.findBySlug(slug).isPresent();
+    }
+
+    @Override
     public long count() {
         return eventJpaRepository.count();
     }
