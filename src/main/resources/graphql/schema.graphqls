@@ -42,6 +42,8 @@ type Query {
   studyGroups(limit: Int = 20, offset: Int = 0, category: String): [StudyGroup!]!
   studyGroupBySlug(slug: String!): StudyGroup
   myGroups: [StudyGroup!]!
+  groupMembers(groupId: ID!): [GroupMember!]!
+  pendingMembers(groupId: ID!): [PendingMember!]!
 
   # Catálogos
   faculties: [Faculty!]!
@@ -96,6 +98,8 @@ type Mutation {
   unirseGrupo(groupId: ID!): GroupMembership!
   salirGrupo(groupId: ID!): Boolean!
   aprobarMembresia(groupId: ID!, membershipId: ID!): GroupMembership!
+  actualizarRolMiembro(groupId: ID!, targetUserId: ID!, role: GroupRole!): GroupMembership!
+  removerMiembro(groupId: ID!, targetUserId: ID!): Boolean!
 
   # Notificaciones
   markNotificationAsRead(notificationId: ID!): Boolean!
@@ -356,6 +360,25 @@ type GroupMembership {
   role: GroupRole!
   status: GroupMembershipStatus!
   createdAt: DateTime!
+}
+
+type GroupMember {
+  userId: ID!
+  username: String
+  fullName: String
+  avatarUrl: String
+  role: String!
+  status: String!
+}
+
+type PendingMember {
+  membershipId: ID!
+  userId: ID!
+  username: String
+  fullName: String
+  avatarUrl: String
+  status: String!
+  role: String!
 }
 
 enum GroupRole {

@@ -1,6 +1,8 @@
 package com.nexora.core.presentation.graphql;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 
 import org.springframework.context.annotation.Bean;
@@ -49,6 +51,9 @@ public class GraphQlScalarConfig {
                     private OffsetDateTime toOffsetDateTime(Object input, String operation) {
                         if (input instanceof OffsetDateTime offsetDateTime) {
                             return offsetDateTime;
+                        }
+                        if (input instanceof LocalDateTime localDateTime) {
+                            return localDateTime.atOffset(ZoneOffset.UTC);
                         }
                         if (input instanceof String text) {
                             try {

@@ -35,24 +35,29 @@ public class GetStudyGroupsUseCase {
     }
 
     private void enrichGroupMembership(StudyGroup group, UUID userId) {
-        GroupMembership membership = groupMembershipRepository
-                .findByGroupIdAndUserId(group.getId(), userId)
-                .orElse(null);
-
-        List<StudyGroup.GroupMembershipInfo> memberships = new ArrayList<>();
-        if (membership != null) {
-            memberships.add(new StudyGroup.GroupMembershipInfo(
-                    membership.getUserId(), membership.getRole(), membership.getStatus()));
-            group.setMemberIds(group.getMemberIds() != null ? group.getMemberIds() : new ArrayList<>());
-            if (membership.isApproved() && !group.getMemberIds().contains(userId)) {
-                group.getMemberIds().add(userId);
+        List<GroupMembership> allMemberships = groupMembershipRepository.findByGroupId(group.getId());
+        List<UUID> allMemberIds = new ArrayList<>();
+        List<StudyGroup.GroupMembershipInfo> membershipInfos = new ArrayList<>();
+        GroupMembership currentUserMembership = null;
+        for (GroupMembership m : allMemberships) {
+            if (m.isApproved()) {
+                allMemberIds.add(m.getUserId());
             }
-            group.setCurrentUserIsMember(membership.isApproved());
-            group.setCurrentUserRole(membership.getRole());
+            membershipInfos.add(new StudyGroup.GroupMembershipInfo(
+                    m.getUserId(), m.getRole(), m.getStatus()));
+            if (userId != null && m.getUserId().equals(userId)) {
+                currentUserMembership = m;
+            }
+        }
+        group.setMemberIds(allMemberIds);
+
+        if (currentUserMembership != null) {
+            group.setCurrentUserIsMember(currentUserMembership.isApproved());
+            group.setCurrentUserRole(currentUserMembership.getRole());
         } else {
             group.setCurrentUserIsMember(false);
             group.setCurrentUserRole(null);
         }
-        group.setMemberships(memberships);
+        group.setMemberships(membershipInfos);
     }
 }

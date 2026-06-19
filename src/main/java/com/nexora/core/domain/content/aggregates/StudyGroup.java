@@ -89,5 +89,13 @@ public class StudyGroup extends DomainModel {
         }
     }
 
+    public Boolean getIsMember() {
+        return currentUserIsMember;
+    }
+
+    public GroupRole getMyRole() {
+        return currentUserRole;
+    }
+
     public record GroupMembershipInfo(UUID userId, GroupRole role, GroupMembershipStatus status) {}
 }

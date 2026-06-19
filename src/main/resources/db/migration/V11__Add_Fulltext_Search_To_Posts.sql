@@ -5,7 +5,7 @@ ALTER TABLE posts ADD COLUMN IF NOT EXISTS search_vector tsvector;
 -- Populate search_vector from existing data
 UPDATE posts SET search_vector = 
   setweight(to_tsvector('spanish', coalesce(titulo, '')), 'A') ||
-  setweight(to_tsvector('spanish', coalesce(contenido, '')), 'B');
+  setweight(to_tsvector('spanish', coalesce(content, '')), 'B');
 
 -- Create GIN index for fast full-text search
 CREATE INDEX IF NOT EXISTS idx_posts_search_vector ON posts USING GIN(search_vector);
@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION update_posts_search_vector() RETURNS trigger AS $$
 BEGIN
   NEW.search_vector := 
     setweight(to_tsvector('spanish', coalesce(NEW.titulo, '')), 'A') ||
-    setweight(to_tsvector('spanish', coalesce(NEW.contenido, '')), 'B');
+    setweight(to_tsvector('spanish', coalesce(NEW.content, '')), 'B');
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

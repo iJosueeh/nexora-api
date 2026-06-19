@@ -43,6 +43,9 @@ public class EditStudyGroupUseCase {
             group.setMaxMembers(maxMembers);
         }
 
-        return studyGroupRepository.save(group);
+        StudyGroup saved = studyGroupRepository.save(group);
+        saved.setCurrentUserIsMember(true);
+        saved.setCurrentUserRole(com.nexora.core.domain.content.enums.GroupRole.OWNER);
+        return saved;
     }
 }

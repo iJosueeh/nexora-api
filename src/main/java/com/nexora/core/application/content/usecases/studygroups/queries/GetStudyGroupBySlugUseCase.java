@@ -26,23 +26,43 @@ public class GetStudyGroupBySlugUseCase {
 
         if (groupOpt.isPresent() && currentUserId != null) {
             StudyGroup group = groupOpt.get();
-            GroupMembership membership = groupMembershipRepository
-                    .findByGroupIdAndUserId(group.getId(), currentUserId)
-                    .orElse(null);
+            enrichGroupMembership(group, currentUserId);
+        }
 
-            List<StudyGroup.GroupMembershipInfo> memberships = new ArrayList<>();
-            if (membership != null) {
-                memberships.add(new StudyGroup.GroupMembershipInfo(
-                        membership.getUserId(), membership.getRole(), membership.getStatus()));
-                group.setCurrentUserIsMember(membership.isApproved());
-                group.setCurrentUserRole(membership.getRole());
-            } else {
-                group.setCurrentUserIsMember(false);
-                group.setCurrentUserRole(null);
+        if (groupOpt.isPresent()) {
+            StudyGroup group = groupOpt.get();
+            List<GroupMembership> allMemberships = groupMembershipRepository.findByGroupId(group.getId());
+            List<UUID> allMemberIds = new ArrayList<>();
+            List<StudyGroup.GroupMembershipInfo> membershipInfos = new ArrayList<>();
+            for (GroupMembership m : allMemberships) {
+                if (m.isApproved()) {
+                    allMemberIds.add(m.getUserId());
+                }
+                membershipInfos.add(new StudyGroup.GroupMembershipInfo(
+                        m.getUserId(), m.getRole(), m.getStatus()));
             }
-            group.setMemberships(memberships);
+            group.setMemberIds(allMemberIds);
+            group.setMemberships(membershipInfos);
         }
 
         return groupOpt;
+    }
+
+    private void enrichGroupMembership(StudyGroup group, UUID userId) {
+        List<GroupMembership> allMemberships = groupMembershipRepository.findByGroupId(group.getId());
+        GroupMembership currentUserMembership = null;
+        for (GroupMembership m : allMemberships) {
+            if (userId != null && m.getUserId().equals(userId)) {
+                currentUserMembership = m;
+                break;
+            }
+        }
+        if (currentUserMembership != null) {
+            group.setCurrentUserIsMember(currentUserMembership.isApproved());
+            group.setCurrentUserRole(currentUserMembership.getRole());
+        } else {
+            group.setCurrentUserIsMember(false);
+            group.setCurrentUserRole(null);
+        }
     }
 }

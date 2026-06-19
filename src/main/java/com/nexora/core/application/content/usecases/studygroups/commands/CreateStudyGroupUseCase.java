@@ -47,6 +47,13 @@ public class CreateStudyGroupUseCase {
                 saved.getId(), userId, GroupRole.OWNER, GroupMembershipStatus.APPROVED);
         groupMembershipRepository.save(ownerMembership);
 
+        saved.setCurrentUserIsMember(true);
+        saved.setCurrentUserRole(GroupRole.OWNER);
+        if (saved.getMemberIds() == null) {
+            saved.setMemberIds(new java.util.ArrayList<>());
+        }
+        saved.getMemberIds().add(userId);
+
         return saved;
     }
 }
