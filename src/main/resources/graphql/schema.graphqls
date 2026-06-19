@@ -45,6 +45,7 @@ type Query {
   groupMembers(groupId: ID!): [GroupMember!]!
   pendingMembers(groupId: ID!): [PendingMember!]!
   invitationsReceived(status: String): [GroupInvitation!]!
+  searchUsers(query: String!): [UserSearchResult!]!
 
   # Catálogos
   faculties: [Faculty!]!
@@ -383,6 +384,13 @@ type PendingMember {
   avatarUrl: String
   status: String!
   role: String!
+}
+
+type UserSearchResult {
+  userId: ID!
+  username: String!
+  fullName: String
+  avatarUrl: String
 }
 
 enum GroupRole {

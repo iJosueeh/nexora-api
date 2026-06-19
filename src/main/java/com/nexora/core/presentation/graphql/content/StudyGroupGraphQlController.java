@@ -28,8 +28,9 @@ import com.nexora.core.application.content.usecases.studygroups.queries.GetStudy
 import com.nexora.core.application.content.usecases.studygroups.queries.GroupInvitationView;
 import com.nexora.core.application.content.usecases.studygroups.queries.GroupMemberView;
 import com.nexora.core.application.content.usecases.studygroups.queries.PendingMemberView;
+import com.nexora.core.application.content.usecases.studygroups.queries.SearchUsersUseCase;
+import com.nexora.core.application.content.usecases.studygroups.queries.UserSearchResultView;
 import com.nexora.core.application.security.services.SecurityService;
-import com.nexora.core.domain.content.aggregates.GroupInvitation;
 import com.nexora.core.domain.content.aggregates.GroupMembership;
 import com.nexora.core.domain.content.aggregates.StudyGroup;
 import com.nexora.core.domain.content.enums.GroupRole;
@@ -58,6 +59,7 @@ public class StudyGroupGraphQlController {
     private final GetGroupMembersUseCase getGroupMembersUseCase;
     private final GetPendingMembershipsUseCase getPendingMembershipsUseCase;
     private final GetInvitationsReceivedUseCase getInvitationsReceivedUseCase;
+    private final SearchUsersUseCase searchUsersUseCase;
     private final SecurityService securityService;
 
     @QueryMapping
@@ -159,8 +161,13 @@ public class StudyGroupGraphQlController {
         return getInvitationsReceivedUseCase.execute(userId, status);
     }
 
+    @QueryMapping
+    public List<UserSearchResultView> searchUsers(@Argument String query) {
+        return searchUsersUseCase.execute(query);
+    }
+
     @MutationMapping
-    public GroupInvitation invitarMiembro(@Argument UUID groupId, @Argument String username) {
+    public GroupInvitationView invitarMiembro(@Argument UUID groupId, @Argument String username) {
         UUID userId = securityService.getCurrentUserId();
         return invitarMiembroUseCase.execute(groupId, username, userId);
     }

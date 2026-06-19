@@ -1,11 +1,9 @@
 package com.nexora.core.application.content.usecases.studygroups.commands;
 
+import com.nexora.core.application.content.usecases.studygroups.queries.GroupInvitationView;
 import com.nexora.core.domain.content.aggregates.GroupInvitation;
 import com.nexora.core.domain.content.aggregates.GroupMembership;
 import com.nexora.core.domain.content.aggregates.StudyGroup;
-import com.nexora.core.domain.content.enums.GroupInvitationStatus;
-import com.nexora.core.domain.content.enums.GroupMembershipStatus;
-import com.nexora.core.domain.content.enums.GroupRole;
 import com.nexora.core.domain.content.repositories.GroupInvitationRepository;
 import com.nexora.core.domain.content.repositories.GroupMembershipRepository;
 import com.nexora.core.domain.content.repositories.StudyGroupRepository;
@@ -27,7 +25,7 @@ public class InvitarMiembroUseCase {
     private final GroupInvitationRepository groupInvitationRepository;
     private final ProfileRepository profileRepository;
 
-    public GroupInvitation execute(UUID groupId, String invitedUsername, UUID inviterUserId) {
+    public GroupInvitationView execute(UUID groupId, String invitedUsername, UUID inviterUserId) {
         StudyGroup group = studyGroupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
 
@@ -53,6 +51,21 @@ public class InvitarMiembroUseCase {
         }
 
         GroupInvitation invitation = GroupInvitation.create(groupId, inviterUserId, invitedUserId);
-        return groupInvitationRepository.save(invitation);
+        GroupInvitation saved = groupInvitationRepository.save(invitation);
+
+        Profile inviterProfile = profileRepository.findByUserId(inviterUserId).orElse(null);
+
+        return new GroupInvitationView(
+                saved.getId(),
+                saved.getGroupId(),
+                group.getName(),
+                group.getSlug(),
+                inviterProfile != null ? inviterProfile.getUsername().value() : null,
+                inviterProfile != null && inviterProfile.getFullName() != null
+                        ? inviterProfile.getFullName().value() : null,
+                inviterProfile != null ? inviterProfile.getAvatarUrl() : null,
+                saved.getStatus().name(),
+                saved.getInvitedUserId()
+        );
     }
 }

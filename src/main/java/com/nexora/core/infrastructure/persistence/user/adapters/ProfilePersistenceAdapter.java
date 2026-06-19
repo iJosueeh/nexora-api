@@ -8,6 +8,7 @@ import com.nexora.core.infrastructure.persistence.user.mappers.ProfileMapper;
 import com.nexora.core.infrastructure.persistence.user.repositories.ProfileJpaRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -35,6 +36,13 @@ public class ProfilePersistenceAdapter implements ProfileRepository {
     @Override
     public Optional<Profile> findByUsername(String username) {
         return profileJpaRepository.findByUsernameIgnoreCase(username).map(profileMapper::toDomain);
+    }
+
+    @Override
+    public List<Profile> searchByUsername(String query, int limit) {
+        return profileJpaRepository.searchByUsername(query, PageRequest.of(0, limit)).stream()
+                .map(profileMapper::toDomain)
+                .toList();
     }
 
     @Override

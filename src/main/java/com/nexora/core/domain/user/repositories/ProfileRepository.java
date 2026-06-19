@@ -10,6 +10,7 @@ public interface ProfileRepository {
     Optional<Profile> findById(UUID id);
     Optional<Profile> findByUserId(UUID userId);
     Optional<Profile> findByUsername(String username);
+    List<Profile> searchByUsername(String query, int limit);
     List<Profile> findByUserIdIn(List<UUID> userIds);
     Profile save(Profile profile);
     void deleteById(UUID id);

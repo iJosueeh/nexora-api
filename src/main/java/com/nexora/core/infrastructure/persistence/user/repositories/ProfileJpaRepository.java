@@ -20,6 +20,9 @@ public interface ProfileJpaRepository extends JpaRepository<ProfileJpaEntity, UU
 
     Optional<ProfileJpaEntity> findByUsernameIgnoreCase(String username);
 
+    @Query("SELECT p FROM ProfileJpaEntity p WHERE LOWER(p.username) LIKE LOWER(CONCAT('%', :query, '%'))")
+    List<ProfileJpaEntity> searchByUsername(@Param("query") String query, org.springframework.data.domain.Pageable pageable);
+
     boolean existsByUserId(UUID userId);
 
     boolean existsByUsername(String username);
