@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 
 import com.nexora.core.application.content.usecases.studygroups.commands.AceptarInvitacionUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.ApproveMembershipUseCase;
+import com.nexora.core.application.content.usecases.studygroups.commands.CancelarInvitacionUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.CreateStudyGroupUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.DeleteStudyGroupUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.EditStudyGroupUseCase;
@@ -19,6 +20,7 @@ import com.nexora.core.application.content.usecases.studygroups.commands.LeaveSt
 import com.nexora.core.application.content.usecases.studygroups.commands.RechazarInvitacionUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.RemoveMemberUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.UpdateMemberRoleUseCase;
+import com.nexora.core.application.content.usecases.studygroups.queries.GetGroupInvitationsUseCase;
 import com.nexora.core.application.content.usecases.studygroups.queries.GetGroupMembersUseCase;
 import com.nexora.core.application.content.usecases.studygroups.queries.GetInvitationsReceivedUseCase;
 import com.nexora.core.application.content.usecases.studygroups.queries.GetMyGroupsUseCase;
@@ -56,8 +58,10 @@ public class StudyGroupGraphQlController {
     private final InvitarMiembroUseCase invitarMiembroUseCase;
     private final AceptarInvitacionUseCase aceptarInvitacionUseCase;
     private final RechazarInvitacionUseCase rechazarInvitacionUseCase;
+    private final CancelarInvitacionUseCase cancelarInvitacionUseCase;
     private final GetGroupMembersUseCase getGroupMembersUseCase;
     private final GetPendingMembershipsUseCase getPendingMembershipsUseCase;
+    private final GetGroupInvitationsUseCase getGroupInvitationsUseCase;
     private final GetInvitationsReceivedUseCase getInvitationsReceivedUseCase;
     private final SearchUsersUseCase searchUsersUseCase;
     private final SecurityService securityService;
@@ -182,5 +186,17 @@ public class StudyGroupGraphQlController {
     public boolean rechazarInvitacion(@Argument UUID invitationId) {
         UUID userId = securityService.getCurrentUserId();
         return rechazarInvitacionUseCase.execute(invitationId, userId);
+    }
+
+    @QueryMapping
+    public List<GroupInvitationView> groupInvitations(@Argument UUID groupId) {
+        UUID userId = securityService.getCurrentUserId();
+        return getGroupInvitationsUseCase.execute(groupId, userId);
+    }
+
+    @MutationMapping
+    public boolean cancelarInvitacion(@Argument UUID invitationId) {
+        UUID userId = securityService.getCurrentUserId();
+        return cancelarInvitacionUseCase.execute(invitationId, userId);
     }
 }

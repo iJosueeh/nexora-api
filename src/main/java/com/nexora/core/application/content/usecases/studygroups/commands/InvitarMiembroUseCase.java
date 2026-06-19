@@ -46,8 +46,10 @@ public class InvitarMiembroUseCase {
             throw new RuntimeException("El usuario ya es miembro de este grupo");
         }
 
-        if (groupInvitationRepository.existsByGroupIdAndInvitedUserId(groupId, invitedUserId)) {
-            throw new RuntimeException("Ya existe una invitación para este usuario");
+        if (groupInvitationRepository.findByGroupIdAndInvitedUserId(groupId, invitedUserId)
+                .filter(i -> i.isPending())
+                .isPresent()) {
+            throw new RuntimeException("Ya existe una invitación pendiente para este usuario");
         }
 
         GroupInvitation invitation = GroupInvitation.create(groupId, inviterUserId, invitedUserId);
