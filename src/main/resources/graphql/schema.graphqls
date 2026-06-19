@@ -44,6 +44,7 @@ type Query {
   myGroups: [StudyGroup!]!
   groupMembers(groupId: ID!): [GroupMember!]!
   pendingMembers(groupId: ID!): [PendingMember!]!
+  invitationsReceived(status: String): [GroupInvitation!]!
 
   # Catálogos
   faculties: [Faculty!]!
@@ -100,6 +101,9 @@ type Mutation {
   aprobarMembresia(groupId: ID!, membershipId: ID!): GroupMembership!
   actualizarRolMiembro(groupId: ID!, targetUserId: ID!, role: GroupRole!): GroupMembership!
   removerMiembro(groupId: ID!, targetUserId: ID!): Boolean!
+  invitarMiembro(groupId: ID!, username: String!): GroupInvitation!
+  aceptarInvitacion(invitationId: ID!): GroupMembership!
+  rechazarInvitacion(invitationId: ID!): Boolean!
 
   # Notificaciones
   markNotificationAsRead(notificationId: ID!): Boolean!
@@ -390,6 +394,24 @@ enum GroupRole {
 enum GroupMembershipStatus {
   APPROVED
   PENDING
+}
+
+enum GroupInvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+type GroupInvitation {
+  invitationId: ID!
+  groupId: ID!
+  groupName: String!
+  groupSlug: String!
+  inviterUsername: String
+  inviterFullName: String
+  inviterAvatarUrl: String
+  status: GroupInvitationStatus!
+  invitedUserId: ID!
 }
 
 input CreateStudyGroupInput {

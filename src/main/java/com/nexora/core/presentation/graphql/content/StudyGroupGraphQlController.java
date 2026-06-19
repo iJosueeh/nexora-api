@@ -8,22 +8,28 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
+import com.nexora.core.application.content.usecases.studygroups.commands.AceptarInvitacionUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.ApproveMembershipUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.CreateStudyGroupUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.DeleteStudyGroupUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.EditStudyGroupUseCase;
+import com.nexora.core.application.content.usecases.studygroups.commands.InvitarMiembroUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.JoinStudyGroupUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.LeaveStudyGroupUseCase;
+import com.nexora.core.application.content.usecases.studygroups.commands.RechazarInvitacionUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.RemoveMemberUseCase;
 import com.nexora.core.application.content.usecases.studygroups.commands.UpdateMemberRoleUseCase;
 import com.nexora.core.application.content.usecases.studygroups.queries.GetGroupMembersUseCase;
+import com.nexora.core.application.content.usecases.studygroups.queries.GetInvitationsReceivedUseCase;
 import com.nexora.core.application.content.usecases.studygroups.queries.GetMyGroupsUseCase;
 import com.nexora.core.application.content.usecases.studygroups.queries.GetPendingMembershipsUseCase;
 import com.nexora.core.application.content.usecases.studygroups.queries.GetStudyGroupBySlugUseCase;
 import com.nexora.core.application.content.usecases.studygroups.queries.GetStudyGroupsUseCase;
+import com.nexora.core.application.content.usecases.studygroups.queries.GroupInvitationView;
 import com.nexora.core.application.content.usecases.studygroups.queries.GroupMemberView;
 import com.nexora.core.application.content.usecases.studygroups.queries.PendingMemberView;
 import com.nexora.core.application.security.services.SecurityService;
+import com.nexora.core.domain.content.aggregates.GroupInvitation;
 import com.nexora.core.domain.content.aggregates.GroupMembership;
 import com.nexora.core.domain.content.aggregates.StudyGroup;
 import com.nexora.core.domain.content.enums.GroupRole;
@@ -46,8 +52,12 @@ public class StudyGroupGraphQlController {
     private final ApproveMembershipUseCase approveMembershipUseCase;
     private final UpdateMemberRoleUseCase updateMemberRoleUseCase;
     private final RemoveMemberUseCase removeMemberUseCase;
+    private final InvitarMiembroUseCase invitarMiembroUseCase;
+    private final AceptarInvitacionUseCase aceptarInvitacionUseCase;
+    private final RechazarInvitacionUseCase rechazarInvitacionUseCase;
     private final GetGroupMembersUseCase getGroupMembersUseCase;
     private final GetPendingMembershipsUseCase getPendingMembershipsUseCase;
+    private final GetInvitationsReceivedUseCase getInvitationsReceivedUseCase;
     private final SecurityService securityService;
 
     @QueryMapping
@@ -141,5 +151,29 @@ public class StudyGroupGraphQlController {
     public boolean removerMiembro(@Argument UUID groupId, @Argument UUID targetUserId) {
         UUID userId = securityService.getCurrentUserId();
         return removeMemberUseCase.execute(groupId, targetUserId, userId);
+    }
+
+    @QueryMapping
+    public List<GroupInvitationView> invitationsReceived(@Argument String status) {
+        UUID userId = securityService.getCurrentUserId();
+        return getInvitationsReceivedUseCase.execute(userId, status);
+    }
+
+    @MutationMapping
+    public GroupInvitation invitarMiembro(@Argument UUID groupId, @Argument String username) {
+        UUID userId = securityService.getCurrentUserId();
+        return invitarMiembroUseCase.execute(groupId, username, userId);
+    }
+
+    @MutationMapping
+    public GroupMembership aceptarInvitacion(@Argument UUID invitationId) {
+        UUID userId = securityService.getCurrentUserId();
+        return aceptarInvitacionUseCase.execute(invitationId, userId);
+    }
+
+    @MutationMapping
+    public boolean rechazarInvitacion(@Argument UUID invitationId) {
+        UUID userId = securityService.getCurrentUserId();
+        return rechazarInvitacionUseCase.execute(invitationId, userId);
     }
 }
