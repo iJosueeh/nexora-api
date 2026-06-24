@@ -15,10 +15,20 @@ type Query {
   
   universityEvents(limit: Int = 20, offset: Int = 0, category: String): [UniversityEvent!]!
   eventBySlug(slug: String!): UniversityEvent
+  eventById(id: ID!): UniversityEvent
 
   # Notificaciones
   notificationHistory(limit: Int = 20, offset: Int = 0): [Notification!]!
   unreadNotificationsCount: Int!
+
+  # Bookmarks
+  bookmarks(limit: Int = 20, offset: Int = 0): [FeedPost!]!
+  isBookmarked(postId: ID!): Boolean!
+
+  # Búsqueda
+  searchPosts(query: String!, limit: Int = 20, offset: Int = 0): [FeedPost!]!
+  searchEvents(query: String!, limit: Int = 20, offset: Int = 0): [UniversityEvent!]!
+  searchPapers(query: String!, limit: Int = 20, offset: Int = 0): [ResearchPaper!]!
 
   # Estadísticas para Administración
   adminStats: AdminStats!
@@ -27,6 +37,21 @@ type Query {
   allUsers(limit: Int = 20, offset: Int = 0, search: String = ""): [Profile!]!
   followers(userId: ID!): [Profile!]!
   following(userId: ID!): [Profile!]!
+
+  # Grupos de Estudio
+  studyGroups(limit: Int = 20, offset: Int = 0, category: String): [StudyGroup!]!
+  studyGroupBySlug(slug: String!): StudyGroup
+  myGroups: [StudyGroup!]!
+  groupMembers(groupId: ID!): [GroupMember!]!
+  pendingMembers(groupId: ID!): [PendingMember!]!
+  groupInvitations(groupId: ID!): [GroupInvitation!]!
+  invitationsReceived(status: String): [GroupInvitation!]!
+  searchUsers(query: String!): [UserSearchResult!]!
+
+  # Catálogos
+  faculties: [Faculty!]!
+  courses: [Course!]!
+  academicInterests: [AcademicInterest!]!
 }
 
 type AdminStats {
@@ -45,6 +70,7 @@ type RecentActivity {
 
 type Mutation {
   crearPublicacion(input: CreatePublicationInput!): FeedPost!
+  editarPublicacion(postId: ID!, input: UpdatePublicationInput!): FeedPost!
   actualizarPerfil(input: UpdateProfileInput!): Profile!
   
   # Comentarios
@@ -59,15 +85,52 @@ type Mutation {
 
   # Nuevas Mutaciones
   confirmRSVP(eventId: ID!): UniversityEvent!
+  crearEvento(input: CreateEventInput!): UniversityEvent!
+  editarEvento(eventId: ID!, input: UpdateEventInput!): UniversityEvent!
+  eliminarEvento(eventId: ID!): Boolean!
+
+  # Recursos / Investigación
+  crearRecurso(input: CreateResearchPaperInput!): ResearchPaper!
+  editarRecurso(paperId: ID!, input: UpdateResearchPaperInput!): ResearchPaper!
+  eliminarRecurso(paperId: ID!): Boolean!
+
+  # Grupos de Estudio
+  crearGrupo(input: CreateStudyGroupInput!): StudyGroup!
+  editarGrupo(groupId: ID!, input: UpdateStudyGroupInput!): StudyGroup!
+  eliminarGrupo(groupId: ID!): Boolean!
+  unirseGrupo(groupId: ID!): GroupMembership!
+  salirGrupo(groupId: ID!): Boolean!
+  aprobarMembresia(groupId: ID!, membershipId: ID!): GroupMembership!
+  actualizarRolMiembro(groupId: ID!, targetUserId: ID!, role: GroupRole!): GroupMembership!
+  removerMiembro(groupId: ID!, targetUserId: ID!): Boolean!
+  invitarMiembro(groupId: ID!, username: String!): GroupInvitation!
+  aceptarInvitacion(invitationId: ID!): GroupMembership!
+  rechazarInvitacion(invitationId: ID!): Boolean!
+  cancelarInvitacion(invitationId: ID!): Boolean!
 
   # Notificaciones
   markNotificationAsRead(notificationId: ID!): Boolean!
   markAllNotificationsAsRead: Boolean!
 
+  # Bookmarks
+  toggleBookmark(postId: ID!): Boolean!
+
   # Gestión Administrativa
   updateUserStatus(userId: ID!, isActive: Boolean!): Profile!
   markPostAsOfficial(postId: ID!, isOfficial: Boolean!): FeedPost!
   deletePost(postId: ID!): Boolean!
+  updateProfileAdmin(userId: ID!, input: UpdateProfileInput!): Profile!
+
+  # Catálogos (Administración)
+  createFaculty(name: String!): Faculty!
+  updateFaculty(id: ID!, name: String!): Faculty!
+  deleteFaculty(id: ID!): Boolean!
+  createCourse(name: String!, facultyId: ID!): Course!
+  updateCourse(id: ID!, name: String!, facultyId: ID!): Course!
+  deleteCourse(id: ID!): Boolean!
+  createAcademicInterest(name: String!): AcademicInterest!
+  updateAcademicInterest(id: ID!, name: String!): AcademicInterest!
+  deleteAcademicInterest(id: ID!): Boolean!
 }
 
 input CreateCommentInput {
@@ -169,6 +232,48 @@ input UpdatePublicationInput {
   imageUrl: String
 }
 
+input CreateEventInput {
+  title: String!
+  description: String
+  date: String!
+  location: String
+  category: String
+  image: String
+  organizerName: String
+  organizerRole: String
+  whatsapp: String
+  telegram: String
+  discord: String
+}
+
+input UpdateEventInput {
+  title: String
+  description: String
+  date: String
+  location: String
+  category: String
+  image: String
+  organizerName: String
+  organizerRole: String
+  whatsapp: String
+  telegram: String
+  discord: String
+}
+
+input CreateResearchPaperInput {
+  title: String!
+  summary: String!
+  faculty: String!
+  pdfUrl: String
+}
+
+input UpdateResearchPaperInput {
+  title: String
+  summary: String
+  faculty: String
+  pdfUrl: String
+}
+
 type FeedPost {
   id: ID!
   titulo: String
@@ -222,4 +327,118 @@ type TrendingTopic {
   tags: [String!]!
   location: String
   imageUrl: String
+}
+
+# Tipos de Catálogos
+type Faculty {
+  id: ID!
+  name: String!
+}
+
+type Course {
+  id: ID!
+  name: String!
+  faculty: Faculty!
+}
+
+type AcademicInterest {
+  id: ID!
+  name: String!
+}
+
+# Grupos de Estudio
+type StudyGroup {
+  id: ID!
+  slug: String!
+  name: String!
+  description: String
+  category: String!
+  memberCount: Int!
+  maxMembers: Int!
+  isMember: Boolean!
+  myRole: GroupRole
+  createdAt: DateTime!
+}
+
+type GroupMembership {
+  id: ID!
+  groupId: ID!
+  userId: ID!
+  role: GroupRole!
+  status: GroupMembershipStatus!
+  createdAt: DateTime!
+}
+
+type GroupMember {
+  userId: ID!
+  username: String
+  fullName: String
+  avatarUrl: String
+  role: String!
+  status: String!
+}
+
+type PendingMember {
+  membershipId: ID!
+  userId: ID!
+  username: String
+  fullName: String
+  avatarUrl: String
+  status: String!
+  role: String!
+}
+
+type UserSearchResult {
+  userId: ID!
+  username: String!
+  fullName: String
+  avatarUrl: String
+}
+
+enum GroupRole {
+  OWNER
+  MODERATOR
+  MEMBER
+}
+
+enum GroupMembershipStatus {
+  APPROVED
+  PENDING
+}
+
+enum GroupInvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+type GroupInvitation {
+  invitationId: ID!
+  groupId: ID!
+  groupName: String!
+  groupSlug: String!
+  inviterUsername: String
+  inviterFullName: String
+  inviterAvatarUrl: String
+  invitedUsername: String
+  invitedFullName: String
+  invitedAvatarUrl: String
+  status: GroupInvitationStatus!
+  invitedUserId: ID!
+}
+
+input CreateStudyGroupInput {
+  name: String!
+  description: String
+  category: String
+  isPrivate: Boolean
+  maxMembers: Int
+}
+
+input UpdateStudyGroupInput {
+  name: String
+  description: String
+  category: String
+  isPrivate: Boolean
+  maxMembers: Int
 }

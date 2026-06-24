@@ -1,4 +1,4 @@
-package com.nexora.core.graphql;
+package com.nexora.core.presentation.graphql;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -14,29 +14,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.oauth2.jwt.Jwt;
 
-import com.nexora.core.content.entity.Post;
-import com.nexora.core.content.repository.PostRepository;
-import com.nexora.core.graphql.dto.UpdatePublicationInput;
-import com.nexora.core.profile.repository.ProfilesRepository;
-import com.nexora.core.user.entity.User;
-import com.nexora.core.user.repository.UserRepository;
+import com.nexora.core.application.content.usecases.feed.commands.EditPostUseCase;
+import com.nexora.core.domain.content.aggregates.Post;
+import com.nexora.core.domain.content.repositories.PostRepository;
+import com.nexora.core.domain.user.aggregates.User;
+import com.nexora.core.domain.user.valueobjects.Email;
+import com.nexora.core.domain.user.valueobjects.UserRole;
 
 @ExtendWith(MockitoExtension.class)
 class FeedMutationServiceTest {
 
     @Mock
     private PostRepository postRepository;
-    @Mock
-    private UserRepository userRepository;
-    @Mock
-    private ProfilesRepository profilesRepository;
-    @Mock
-    private Jwt jwt;
 
     @InjectMocks
-    private FeedMutationService feedMutationService;
+    private EditPostUseCase editPostUseCase;
 
     private User author;
     private Post post;
@@ -45,9 +38,12 @@ class FeedMutationServiceTest {
     @BeforeEach
     void setUp() {
         postId = UUID.randomUUID();
-        author = new User();
-        author.setEmail("author@utp.edu.pe");
-        author.setId(UUID.randomUUID());
+        author = User.builder()
+                .email(new Email("author@utp.edu.pe"))
+                .id(UUID.randomUUID())
+                .isActive(true)
+                .role(UserRole.ROLE_STUDENT)
+                .build();
 
         post = new Post();
         post.setId(postId);
@@ -57,45 +53,35 @@ class FeedMutationServiceTest {
 
     @Test
     void editarPublicacion_Success() {
-        when(jwt.getClaimAsString("email")).thenReturn("author@utp.edu.pe");
         when(postRepository.findById(postId)).thenReturn(Optional.of(post));
-        when(postRepository.saveAndFlush(any())).thenReturn(post);
+        when(postRepository.save(any())).thenReturn(post);
 
-        UpdatePublicationInput input = new UpdatePublicationInput(
-                "New Title", "Updated Content", List.of("tag1"), "Location", null
-        );
+        assertDoesNotThrow(() -> editPostUseCase.execute("author@utp.edu.pe", postId,
+                "New Title", "Updated Content", List.of("tag1"), "Location", null));
 
-        assertDoesNotThrow(() -> feedMutationService.editarPublicacion(jwt, postId, input));
-        
-        verify(postRepository).saveAndFlush(post);
+        verify(postRepository).save(post);
         assertEquals("Updated Content", post.getContent());
     }
 
     @Test
     void editarPublicacion_Forbidden_WhenNotAuthor() {
-        when(jwt.getClaimAsString("email")).thenReturn("other@utp.edu.pe");
         when(postRepository.findById(postId)).thenReturn(Optional.of(post));
 
-        UpdatePublicationInput input = new UpdatePublicationInput(
-                "Title", "Content", null, null, null
+        assertThrows(IllegalStateException.class, () ->
+                editPostUseCase.execute("other@utp.edu.pe", postId,
+                        "Title", "Content", null, null, null)
         );
 
-        assertThrows(IllegalStateException.class, () -> 
-                feedMutationService.editarPublicacion(jwt, postId, input)
-        );
-        
-        verify(postRepository, never()).saveAndFlush(any());
+        verify(postRepository, never()).save(any());
     }
 
     @Test
     void editarPublicacion_NotFound() {
-        when(jwt.getClaimAsString("email")).thenReturn("author@utp.edu.pe");
         when(postRepository.findById(postId)).thenReturn(Optional.empty());
 
-        UpdatePublicationInput input = new UpdatePublicationInput("T", "C", null, null, null);
-
-        assertThrows(IllegalArgumentException.class, () -> 
-                feedMutationService.editarPublicacion(jwt, postId, input)
+        assertThrows(IllegalArgumentException.class, () ->
+                editPostUseCase.execute("author@utp.edu.pe", postId,
+                        "T", "C", null, null, null)
         );
     }
 }

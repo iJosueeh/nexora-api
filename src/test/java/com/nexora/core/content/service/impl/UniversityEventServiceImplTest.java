@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.util.HashSet;
+import java.util.ArrayList;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,22 +14,23 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.nexora.core.content.entity.UniversityEvent;
-import com.nexora.core.content.repository.UniversityEventRepository;
-import com.nexora.core.user.entity.User;
-import com.nexora.core.user.repository.UserRepository;
+import com.nexora.core.application.content.usecases.events.commands.ConfirmRSVPUseCase;
+import com.nexora.core.domain.content.aggregates.UniversityEvent;
+import com.nexora.core.domain.content.repositories.EventRepository;
+import com.nexora.core.domain.user.aggregates.User;
+import com.nexora.core.domain.user.repositories.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class UniversityEventServiceImplTest {
 
     @Mock
-    private UniversityEventRepository eventRepository;
+    private EventRepository eventRepository;
 
     @Mock
     private UserRepository userRepository;
 
     @InjectMocks
-    private UniversityEventServiceImpl eventService;
+    private ConfirmRSVPUseCase confirmRSVPUseCase;
 
     private UUID eventId;
     private UUID userId;
@@ -40,11 +41,11 @@ class UniversityEventServiceImplTest {
     void setUp() {
         eventId = UUID.randomUUID();
         userId = UUID.randomUUID();
-        
+
         event = new UniversityEvent();
         event.setId(eventId);
-        event.setAttendees(new HashSet<>());
-        
+        event.setAttendeeIds(new ArrayList<>());
+
         user = new User();
         user.setId(userId);
     }
@@ -55,21 +56,21 @@ class UniversityEventServiceImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(eventRepository.save(any(UniversityEvent.class))).thenReturn(event);
 
-        UniversityEvent updatedEvent = eventService.confirmRSVP(eventId, userId);
+        UniversityEvent updatedEvent = confirmRSVPUseCase.execute(eventId, userId);
 
         assertNotNull(updatedEvent);
-        assertTrue(updatedEvent.getAttendees().contains(user));
+        assertTrue(updatedEvent.getAttendeeIds().contains(userId));
         verify(eventRepository, times(1)).save(event);
     }
 
     @Test
     void confirmRSVP_AlreadyRegistered_ThrowsException() {
-        event.getAttendees().add(user);
+        event.getAttendeeIds().add(userId);
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            eventService.confirmRSVP(eventId, userId);
+            confirmRSVPUseCase.execute(eventId, userId);
         });
 
         assertEquals("Ya estás registrado en este evento", exception.getMessage());
@@ -78,31 +79,25 @@ class UniversityEventServiceImplTest {
 
     @Test
     void confirmRSVP_AlreadyRegistered_DifferentReferenceSameId_ThrowsException() {
-        User existingUser = new User();
-        existingUser.setId(userId);
-        event.getAttendees().add(existingUser);
-        
-        User anotherUserRef = new User();
-        anotherUserRef.setId(userId);
+        event.getAttendeeIds().add(userId);
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(anotherUserRef));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            eventService.confirmRSVP(eventId, userId);
+            confirmRSVPUseCase.execute(eventId, userId);
         });
 
         assertEquals("Ya estás registrado en este evento", exception.getMessage());
         verify(eventRepository, never()).save(any());
     }
 
-
     @Test
     void confirmRSVP_EventNotFound_ThrowsException() {
         when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
 
         assertThrows(RuntimeException.class, () -> {
-            eventService.confirmRSVP(eventId, userId);
+            confirmRSVPUseCase.execute(eventId, userId);
         });
     }
 }
