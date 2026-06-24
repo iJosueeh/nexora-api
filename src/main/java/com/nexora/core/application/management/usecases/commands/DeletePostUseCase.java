@@ -3,7 +3,9 @@ package com.nexora.core.application.management.usecases.commands;
 import com.nexora.core.domain.content.aggregates.Post;
 import com.nexora.core.domain.content.repositories.PostRepository;
 import com.nexora.core.application.security.services.SecurityService;
+import com.nexora.core.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +22,7 @@ public class DeletePostUseCase {
 
     public boolean execute(UUID postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
         UUID currentUserId = securityService.getCurrentUserId();
 
@@ -29,7 +31,7 @@ public class DeletePostUseCase {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
         if (!isAdmin && !post.getAutor().getId().equals(currentUserId)) {
-            throw new RuntimeException("No tienes permiso para eliminar esta publicación");
+            throw new AccessDeniedException("No eres el autor de esta publicación");
         }
 
         postRepository.deleteById(post.getId());

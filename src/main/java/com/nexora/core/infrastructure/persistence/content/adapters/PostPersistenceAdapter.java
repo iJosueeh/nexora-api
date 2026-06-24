@@ -11,9 +11,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -42,7 +41,12 @@ public class PostPersistenceAdapter implements PostRepository {
 
     @Override
     public List<Post> findAllByIdIn(List<UUID> ids) {
-        return postJpaRepository.findAllById(ids).stream()
+        List<PostJpaEntity> entities = postJpaRepository.findAllById(ids);
+        Map<UUID, PostJpaEntity> entityMap = entities.stream()
+                .collect(Collectors.toMap(PostJpaEntity::getId, e -> e));
+        return ids.stream()
+                .map(entityMap::get)
+                .filter(Objects::nonNull)
                 .map(postMapper::toDomain)
                 .toList();
     }

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class NotificationController {
     private final MarkAllNotificationsReadUseCase markAllNotificationsReadUseCase;
 
     @QueryMapping
+    @PreAuthorize("isAuthenticated()")
     public List<NotificationView> notificationHistory(@Argument Integer limit, @Argument Integer offset) {
         int safeLimit = limit == null ? 20 : Math.max(1, Math.min(limit, 100));
         int safeOffset = offset == null ? 0 : Math.max(0, offset);
@@ -32,17 +34,20 @@ public class NotificationController {
     }
 
     @QueryMapping
+    @PreAuthorize("isAuthenticated()")
     public int unreadNotificationsCount() {
         UUID currentUserId = securityService.getCurrentUserId();
         return (int) notificationViewRepository.countUnread(currentUserId);
     }
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public boolean markNotificationAsRead(@Argument UUID notificationId) {
         return markNotificationReadUseCase.execute(notificationId);
     }
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public boolean markAllNotificationsAsRead() {
         return markAllNotificationsReadUseCase.execute();
     }

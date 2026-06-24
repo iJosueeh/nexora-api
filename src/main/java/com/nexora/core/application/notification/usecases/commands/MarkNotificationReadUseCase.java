@@ -5,6 +5,7 @@ import com.nexora.core.domain.notification.aggregates.Notification;
 import com.nexora.core.domain.notification.repositories.NotificationRepository;
 import com.nexora.core.application.security.services.SecurityService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +23,7 @@ public class MarkNotificationReadUseCase {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
         if (!notification.getUserId().equals(securityService.getCurrentUserId())) {
-            throw new RuntimeException("Unauthorized");
+            throw new AccessDeniedException("Notificación no pertenece al usuario");
         }
         notification.markAsRead();
         notificationRepository.save(notification);

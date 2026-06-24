@@ -66,6 +66,9 @@ public class InvitarMiembroUseCase {
                 inviterProfile != null && inviterProfile.getFullName() != null
                         ? inviterProfile.getFullName().value() : null,
                 inviterProfile != null ? inviterProfile.getAvatarUrl() : null,
+                invitedProfile.getUsername().value(),
+                invitedProfile.getFullName() != null ? invitedProfile.getFullName().value() : null,
+                invitedProfile.getAvatarUrl(),
                 saved.getStatus().name(),
                 saved.getInvitedUserId()
         );

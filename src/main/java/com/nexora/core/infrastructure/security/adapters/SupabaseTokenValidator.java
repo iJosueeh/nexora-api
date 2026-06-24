@@ -1,12 +1,14 @@
 package com.nexora.core.infrastructure.security.adapters;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class SupabaseTokenValidator {
@@ -23,7 +25,11 @@ public class SupabaseTokenValidator {
                     jwt.getClaims()
             );
             return Optional.of(payload);
+        } catch (org.springframework.security.oauth2.jwt.JwtValidationException e) {
+            log.debug("Token JWT invalid: {}", e.getMessage());
+            return Optional.empty();
         } catch (Exception e) {
+            log.warn("Unexpected error validating JWT: {}", e.getMessage());
             return Optional.empty();
         }
     }

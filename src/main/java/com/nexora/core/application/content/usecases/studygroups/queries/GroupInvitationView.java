@@ -10,6 +10,9 @@ public record GroupInvitationView(
     String inviterUsername,
     String inviterFullName,
     String inviterAvatarUrl,
+    String invitedUsername,
+    String invitedFullName,
+    String invitedAvatarUrl,
     String status,
     UUID invitedUserId
 ) {}

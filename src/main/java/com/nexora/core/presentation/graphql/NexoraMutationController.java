@@ -2,6 +2,7 @@ package com.nexora.core.presentation.graphql;
 
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Controller;
@@ -50,6 +51,7 @@ public class NexoraMutationController {
     private final ProfileRepository profileRepository;
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public FeedPostView crearPublicacion(@AuthenticationPrincipal Jwt jwt, @Argument CreatePublicationInput input) {
         String email = jwt.getClaimAsString("email");
         Post post = createPostUseCase.execute(email, input.titulo(), input.contenido(), input.tags(), input.location(), input.imageUrl());
@@ -57,6 +59,7 @@ public class NexoraMutationController {
     }
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public FeedPostView editarPublicacion(@AuthenticationPrincipal Jwt jwt, @Argument UUID postId, @Argument UpdatePublicationInput input) {
         String email = jwt.getClaimAsString("email");
         Post post = editPostUseCase.execute(email, postId, input.titulo(), input.contenido(), input.tags(), input.location(), input.imageUrl());
@@ -64,6 +67,7 @@ public class NexoraMutationController {
     }
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public CommentThreadView crearComentario(@AuthenticationPrincipal Jwt jwt, @Argument CreateCommentInput input) {
         String email = jwt.getClaimAsString("email");
         Comment comment = createCommentUseCase.execute(email, input.postId(), input.parentId(), input.contenido());
@@ -71,6 +75,7 @@ public class NexoraMutationController {
     }
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public CommentThreadView editarComentario(@AuthenticationPrincipal Jwt jwt, @Argument UUID commentId, @Argument String contenido) {
         String email = jwt.getClaimAsString("email");
         Comment comment = editCommentUseCase.execute(email, commentId, contenido);
@@ -78,28 +83,33 @@ public class NexoraMutationController {
     }
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public boolean eliminarComentario(@AuthenticationPrincipal Jwt jwt, @Argument UUID commentId) {
         String email = jwt.getClaimAsString("email");
         return deleteCommentUseCase.execute(email, commentId);
     }
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public ProfileView actualizarPerfil(@AuthenticationPrincipal Jwt jwt, @Argument UpdateProfileInput input) {
         String email = jwt.getClaimAsString("email");
         return updateProfileUseCase.execute(email, input);
     }
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public boolean toggleLike(@Argument UUID postId) {
         return togglePostLikeUseCase.execute(postId);
     }
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public boolean toggleFollow(@Argument UUID targetUserId) {
         return toggleFollowUseCase.execute(targetUserId);
     }
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public boolean toggleCommentLike(@Argument UUID commentId) {
         return toggleCommentLikeUseCase.execute(commentId);
     }
@@ -139,11 +149,13 @@ public class NexoraMutationController {
 
     private CommentThreadView toCommentThreadView(Comment comment) {
         Profile profile = profileRepository.findByUserId(comment.getAutor().getId()).orElse(null);
+        String avatarUrl = (profile != null && profile.getAvatarUrl() != null && !profile.getAvatarUrl().isBlank())
+                ? profile.getAvatarUrl() : null;
         FeedAuthorView autor = new FeedAuthorView(
                 comment.getAutor().getId(),
                 profile != null ? profile.getUsername().value() : comment.getAutor().getEmail().username(),
                 profile != null && profile.getFullName() != null ? profile.getFullName().value() : comment.getAutor().getEmail().value(),
-                profile != null ? profile.getAvatarUrl() : null
+                avatarUrl
         );
 
         return new CommentThreadView(

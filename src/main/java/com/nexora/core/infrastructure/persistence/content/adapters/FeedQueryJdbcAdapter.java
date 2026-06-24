@@ -119,7 +119,8 @@ public class FeedQueryJdbcAdapter {
         }
     }
 
-    public List<TagSuggestionView> queryTagSuggestions(int limit) {
+    public List<TagSuggestionView> queryTagSuggestions(String search, int limit) {
+        String safeSearch = search == null ? "" : search.trim().toLowerCase();
         String sql = """
                 SELECT tag_name, usage_count 
                 FROM (
@@ -127,10 +128,13 @@ public class FeedQueryJdbcAdapter {
                     FROM post_tags 
                     GROUP BY tag_name
                 ) combined 
+                WHERE tag_name LIKE :search
+                ORDER BY usage_count DESC
                 LIMIT :limit
                 """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("search", safeSearch + "%")
             .addValue("limit", limit);
 
         try {
@@ -141,6 +145,43 @@ public class FeedQueryJdbcAdapter {
         } catch (Exception e) {
             return new ArrayList<>();
         }
+    }
+
+    public record PostEngagement(int likesCount, int commentsCount, boolean isLiked) {}
+
+    public Map<UUID, PostEngagement> queryEngagementByPostIds(List<UUID> postIds, UUID currentUserId) {
+        if (postIds == null || postIds.isEmpty()) return Map.of();
+
+        String sql = """
+                SELECT
+                    p.id AS post_id,
+                    COUNT(DISTINCT l.id) AS likes_count,
+                    COUNT(DISTINCT c.id) AS comments_count,
+                    COALESCE(BOOL_OR(l.user_id = :currentUserId), false) AS is_liked
+                FROM posts p
+                LEFT JOIN post_likes l ON l.post_id = p.id
+                LEFT JOIN comentarios c ON c.post_id = p.id
+                WHERE p.id IN (:postIds)
+                GROUP BY p.id
+                """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("postIds", postIds)
+                .addValue("currentUserId", currentUserId);
+
+        Map<UUID, PostEngagement> result = new HashMap<>();
+        try {
+            jdbcTemplate.query(sql, params, (rs) -> {
+                UUID postId = rs.getObject("post_id", UUID.class);
+                result.put(postId, new PostEngagement(
+                        rs.getInt("likes_count"),
+                        rs.getInt("comments_count"),
+                        rs.getBoolean("is_liked")));
+            });
+        } catch (Exception e) {
+            log.error("[FeedQueryJdbcAdapter] Error querying engagement: {}", e.getMessage(), e);
+        }
+        return result;
     }
 
     public Map<UUID, List<String>> queryTagsByPostIds(List<UUID> postIds) {
@@ -167,32 +208,48 @@ public class FeedQueryJdbcAdapter {
 
     public List<TrendingTopicView> queryTrendingTopics(int limit) {
         String sql = """
-                SELECT 
-                    LOWER(TRIM(pt.tag)) as tag_name,
-                    COUNT(DISTINCT p.id) as posts_using_tag,
-                    (COALESCE(SUM(c.comments_count), 0) + COALESCE(SUM(l.likes_count), 0)) as interaction_volume,
-                    MAX(p.id::text)::uuid as latest_post_id,
-                    MAX(pf.username) as autor_username,
-                    MAX(pf.full_name) as autor_full_name,
-                    MAX(pf.avatar_url) as autor_avatar_url,
-                    MAX(u.id::text)::uuid as autor_id
-                FROM post_tags pt
-                JOIN posts p ON p.id = pt.post_id
-                LEFT JOIN (
-                    SELECT post_id, COUNT(*) as comments_count 
-                    FROM comentarios 
-                    GROUP BY post_id
-                ) c ON c.post_id = p.id
-                LEFT JOIN (
-                    SELECT post_id, COUNT(*) as likes_count 
-                    FROM post_likes 
-                    GROUP BY post_id
-                ) l ON l.post_id = p.id
-                JOIN usuarios u ON u.id = p.autor_id
-                LEFT JOIN perfiles pf ON pf.usuario_id = u.id
-                WHERE p.created_at >= :since
-                GROUP BY tag_name
-                ORDER BY (COALESCE(SUM(c.comments_count), 0) + COALESCE(SUM(l.likes_count), 0) + COUNT(DISTINCT p.id) * 3) DESC
+                WITH tag_stats AS (
+                    SELECT
+                        LOWER(TRIM(pt.tag)) AS tag_name,
+                        COUNT(DISTINCT p.id) AS posts_using_tag,
+                        (COALESCE(SUM(c.comments_count), 0) + COALESCE(SUM(l.likes_count), 0)) AS interaction_volume,
+                        MAX(p.created_at) AS latest_created_at
+                    FROM post_tags pt
+                    JOIN posts p ON p.id = pt.post_id
+                    LEFT JOIN (
+                        SELECT post_id, COUNT(*) AS comments_count
+                        FROM comentarios
+                        GROUP BY post_id
+                    ) c ON c.post_id = p.id
+                    LEFT JOIN (
+                        SELECT post_id, COUNT(*) AS likes_count
+                        FROM post_likes
+                        GROUP BY post_id
+                    ) l ON l.post_id = p.id
+                    WHERE p.created_at >= :since
+                    GROUP BY tag_name
+                ),
+                latest_posts AS (
+                    SELECT DISTINCT ON (ts.tag_name)
+                        ts.tag_name,
+                        ts.posts_using_tag,
+                        ts.interaction_volume,
+                        p.id AS latest_post_id,
+                        u.id AS autor_id,
+                        pf.username AS autor_username,
+                        pf.full_name AS autor_full_name,
+                        pf.avatar_url AS autor_avatar_url
+                    FROM tag_stats ts
+                    JOIN posts p ON p.created_at = ts.latest_created_at
+                    JOIN post_tags pt ON pt.post_id = p.id AND LOWER(TRIM(pt.tag)) = ts.tag_name
+                    JOIN usuarios u ON u.id = p.autor_id
+                    LEFT JOIN perfiles pf ON pf.usuario_id = u.id
+                    ORDER BY ts.tag_name, p.created_at DESC
+                )
+                SELECT tag_name, posts_using_tag, interaction_volume,
+                       latest_post_id, autor_id, autor_username, autor_full_name, autor_avatar_url
+                FROM latest_posts
+                ORDER BY (interaction_volume + posts_using_tag * 3) DESC
                 LIMIT :limit
                 """;
 

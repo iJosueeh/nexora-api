@@ -51,6 +51,9 @@ public class GetInvitationsReceivedUseCase {
                 inviterProfile != null && inviterProfile.getFullName() != null
                         ? inviterProfile.getFullName().value() : "",
                 inviterProfile != null ? inviterProfile.getAvatarUrl() : null,
+                null,
+                null,
+                null,
                 invitation.getStatus().name(),
                 invitation.getInvitedUserId()
         );

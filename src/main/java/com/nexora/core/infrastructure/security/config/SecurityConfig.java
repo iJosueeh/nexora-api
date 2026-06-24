@@ -30,7 +30,7 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-methods:GET,POST,PUT,PATCH,DELETE,OPTIONS}")
     private List<String> allowedMethods;
 
-    @Value("${app.cors.allowed-headers:*}")
+    @Value("${app.cors.allowed-headers:Authorization,Content-Type}")
     private List<String> allowedHeaders;
 
     @Value("${app.cors.exposed-headers:Authorization}")
@@ -61,20 +61,30 @@ public class SecurityConfig {
                     auth.requestMatchers(HttpMethod.GET, "/api/auth/catalogs").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/auth/public-profile/**").permitAll();
                     auth.requestMatchers("/favicon.ico", "/error", "/webjars/**").permitAll();
-                    
-                    auth.requestMatchers(
-                            "/swagger-ui/**", 
-                            "/swagger-ui.html", 
-                            "/v3/api-docs/**", 
-                            "/v3/api-docs"
-                    ).permitAll();
-                    
-                    auth.requestMatchers(
-                            "/graphql", 
-                            "/graphiql", 
-                            "/graphiql/**", 
-                            "/graphql/**"
-                    ).permitAll();
+
+                    if (publicDocsEnabled) {
+                        auth.requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs"
+                        ).permitAll();
+                    } else {
+                        auth.requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs"
+                        ).hasAnyRole("ADMIN", "OFFICIAL");
+                    }
+
+                    if (publicGraphqlEnabled) {
+                        auth.requestMatchers("/graphql", "/graphql/**").permitAll();
+                        auth.requestMatchers("/graphiql", "/graphiql/**").permitAll();
+                    } else {
+                        auth.requestMatchers("/graphql", "/graphql/**").authenticated();
+                        auth.requestMatchers("/graphiql", "/graphiql/**").hasAnyRole("ADMIN", "OFFICIAL");
+                    }
                     
                     auth.anyRequest().authenticated();
                 })

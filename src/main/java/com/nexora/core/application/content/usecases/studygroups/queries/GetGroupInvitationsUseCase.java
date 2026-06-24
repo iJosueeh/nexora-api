@@ -44,6 +44,7 @@ public class GetGroupInvitationsUseCase {
     private GroupInvitationView toView(GroupInvitation invitation) {
         StudyGroup group = studyGroupRepository.findById(invitation.getGroupId()).orElse(null);
         Profile inviterProfile = profileRepository.findByUserId(invitation.getInviterId()).orElse(null);
+        Profile invitedProfile = profileRepository.findByUserId(invitation.getInvitedUserId()).orElse(null);
 
         return new GroupInvitationView(
                 invitation.getId(),
@@ -54,6 +55,10 @@ public class GetGroupInvitationsUseCase {
                 inviterProfile != null && inviterProfile.getFullName() != null
                         ? inviterProfile.getFullName().value() : null,
                 inviterProfile != null ? inviterProfile.getAvatarUrl() : null,
+                invitedProfile != null ? invitedProfile.getUsername().value() : null,
+                invitedProfile != null && invitedProfile.getFullName() != null
+                        ? invitedProfile.getFullName().value() : null,
+                invitedProfile != null ? invitedProfile.getAvatarUrl() : null,
                 invitation.getStatus().name(),
                 invitation.getInvitedUserId()
         );

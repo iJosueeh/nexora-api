@@ -16,6 +16,6 @@ public class GetTagsUseCase {
     private final FeedQueryJdbcAdapter feedQueryJdbcAdapter;
 
     public List<TagSuggestionView> execute(String search, int limit) {
-        return feedQueryJdbcAdapter.queryTagSuggestions(limit);
+        return feedQueryJdbcAdapter.queryTagSuggestions(search, limit);
     }
 }
