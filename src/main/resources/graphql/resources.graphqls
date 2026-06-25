@@ -1,0 +1,79 @@
+# --- Academic Resources Module ---
+
+type AcademicResource {
+    id: ID!
+    title: String!
+    description: String
+    type: ResourceType!
+    category: ResourceCategory!
+    author: FeedAuthor!
+    fileUrl: String!
+    fileSize: Int! # Usamos Int o Long dependiendo de tu configuración de escalares
+    fileFormat: String!
+    averageRating: Float!
+    ratingsCount: Int!
+    userRating: Int
+    downloadCount: Int!
+    createdAt: DateTime!
+    updatedAt: DateTime
+}
+
+type ResourceCategory {
+    id: ID!
+    name: String!
+    career: Course!
+}
+
+type ResourceRating {
+    id: ID!
+    resourceId: ID!
+    user: Profile!
+    rating: Int!
+    createdAt: DateTime!
+}
+
+enum ResourceType { 
+    SUMMARY 
+    GUIDE 
+    FLASHCARD 
+    EXAM 
+    OTHER 
+}
+
+# Queries
+extend type Query {
+    resources(limit: Int = 20, offset: Int = 0, filter: ResourceFilter): [AcademicResource!]!
+    resourceById(id: ID!): AcademicResource
+    myResources(limit: Int = 20, offset: Int = 0): [AcademicResource!]!
+    resourceCategories(careerId: ID): [ResourceCategory!]!
+    resourceDownloadUrl(resourceId: ID!): String!
+}
+
+# Mutations
+extend type Mutation {
+    uploadResource(input: ResourceInput!, file: Upload!): AcademicResource!
+    updateResource(id: ID!, input: ResourceInput!): AcademicResource!
+    deleteResource(id: ID!): Boolean!
+    rateResource(resourceId: ID!, rating: Int!): ResourceRating!
+}
+
+input ResourceInput { 
+    title: String! 
+    description: String 
+    categoryId: ID! 
+    type: ResourceType! 
+}
+
+input ResourceFilter { 
+    careerId: ID 
+    categoryId: ID 
+    type: ResourceType 
+    authorId: ID 
+    minRating: Float 
+    query: String 
+}
+
+# RF-RES-04: Las etiquetas son el resultado de la categoría y el tipo.
+# No se implementa una tabla de tags libres en MVP.
+scalar Upload
+
