@@ -29,6 +29,11 @@ spring:
     baseline-on-migrate: true
     enabled: true
 
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 25MB
+
   jackson:
     serialization:
       "[indent_output]": true
