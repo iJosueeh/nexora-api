@@ -21,6 +21,7 @@ import com.nexora.core.application.content.usecases.resources.queries.GetResourc
 import com.nexora.core.application.content.usecases.resources.queries.GetResourcesUseCase;
 import com.nexora.core.application.content.usecases.resources.queries.GetResourceByIdUseCase;
 import com.nexora.core.application.content.usecases.resources.queries.GetMyResourcesUseCase;
+import com.nexora.core.application.content.usecases.resources.queries.GenerateResourceDownloadUrlUseCase;
 import com.nexora.core.application.content.usecases.resources.commands.CreateResourceCategoryUseCase;
 import com.nexora.core.application.content.usecases.resources.commands.UpdateResourceCategoryUseCase;
 import com.nexora.core.application.content.usecases.resources.commands.DeleteResourceCategoryUseCase;
@@ -45,6 +46,7 @@ public class ResourceGraphQlController {
     private final GetResourcesUseCase getResourcesUseCase;
     private final GetResourceByIdUseCase getResourceByIdUseCase;
     private final GetMyResourcesUseCase getMyResourcesUseCase;
+    private final GenerateResourceDownloadUrlUseCase generateResourceDownloadUrlUseCase;
     private final CreateResourceCategoryUseCase createResourceCategoryUseCase;
     private final UpdateResourceCategoryUseCase updateResourceCategoryUseCase;
     private final DeleteResourceCategoryUseCase deleteResourceCategoryUseCase;
@@ -85,6 +87,12 @@ public class ResourceGraphQlController {
     @PreAuthorize("isAuthenticated()")
     public List<AcademicResource> myResources(@Argument int limit, @Argument int offset) {
         return getMyResourcesUseCase.execute(limit, offset);
+    }
+
+    @QueryMapping
+    @PreAuthorize("isAuthenticated()")
+    public String resourceDownloadUrl(@Argument UUID resourceId) {
+        return generateResourceDownloadUrlUseCase.execute(resourceId);
     }
 
     @MutationMapping
