@@ -1,5 +1,6 @@
 package com.nexora.core.presentation.graphql.content;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -10,6 +11,9 @@ import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Controller;
 
 import com.nexora.core.application.content.dto.FeedAuthorView;
@@ -22,9 +26,12 @@ import com.nexora.core.application.content.usecases.resources.commands.UpdateRes
 import com.nexora.core.application.content.usecases.resources.commands.DeleteResourceCategoryUseCase;
 import com.nexora.core.application.content.usecases.resources.commands.UpdateResourceUseCase;
 import com.nexora.core.application.content.usecases.resources.commands.DeleteResourceUseCase;
+import com.nexora.core.application.content.usecases.resources.commands.RateResourceUseCase;
 import com.nexora.core.domain.content.aggregates.AcademicResource;
 import com.nexora.core.domain.content.aggregates.ResourceCategory;
+import com.nexora.core.domain.content.aggregates.ResourceRating;
 import com.nexora.core.domain.content.ports.ResourceCategoryRepository;
+import com.nexora.core.domain.content.ports.ResourceRatingRepository;
 import com.nexora.core.domain.user.aggregates.Profile;
 import com.nexora.core.domain.user.repositories.ProfileRepository;
 
@@ -43,8 +50,10 @@ public class ResourceGraphQlController {
     private final DeleteResourceCategoryUseCase deleteResourceCategoryUseCase;
     private final UpdateResourceUseCase updateResourceUseCase;
     private final DeleteResourceUseCase deleteResourceUseCase;
+    private final RateResourceUseCase rateResourceUseCase;
     private final ProfileRepository profileRepository;
     private final ResourceCategoryRepository resourceCategoryRepository;
+    private final ResourceRatingRepository resourceRatingRepository;
 
     @QueryMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'OFFICIAL')")
@@ -115,6 +124,12 @@ public class ResourceGraphQlController {
         return deleteResourceUseCase.execute(id);
     }
 
+    @MutationMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResourceRating rateResource(@Argument UUID resourceId, @Argument int rating) {
+        return rateResourceUseCase.execute(resourceId, rating);
+    }
+
     @BatchMapping(typeName = "AcademicResource", field = "author")
     public Map<AcademicResource, FeedAuthorView> author(List<AcademicResource> resources) {
         List<UUID> authorIds = resources.stream().map(AcademicResource::getAuthorId).distinct().toList();
@@ -143,6 +158,40 @@ public class ResourceGraphQlController {
                 return cat != null ? new ResourceCategoryView(cat.getId(), cat.getName(), null) : null;
             }
         ));
+    }
+
+    @BatchMapping(typeName = "AcademicResource", field = "userRating")
+    public Map<AcademicResource, Integer> userRating(List<AcademicResource> resources) {
+        UUID currentUserId = getCurrentUserId();
+        Map<AcademicResource, Integer> result = new HashMap<>();
+
+        if (currentUserId == null) {
+            resources.forEach(r -> result.put(r, null));
+            return result;
+        }
+
+        for (AcademicResource resource : resources) {
+            resourceRatingRepository.findByUserIdAndResourceId(currentUserId, resource.getId())
+                    .ifPresentOrElse(
+                        rating -> result.put(resource, rating.getRating()),
+                        () -> result.put(resource, null)
+                    );
+        }
+
+        return result;
+    }
+
+    private UUID getCurrentUserId() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                Object principal = authentication.getPrincipal();
+                if (principal instanceof Jwt jwt) {
+                    return UUID.fromString(jwt.getSubject());
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     public record ResourceCategoryView(UUID id, String name, CourseView career) {}
