@@ -77,3 +77,12 @@ app:
     exposed-headers: ${CORS_EXPOSED_HEADERS:Authorization}
     allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
     max-age: ${CORS_MAX_AGE:3600}
+  storage:
+    endpoint: ${STORAGE_ENDPOINT:}
+    region: ${STORAGE_REGION:us-east-1}
+    access-key: ${STORAGE_ACCESS_KEY:}
+    secret-key: ${STORAGE_SECRET_KEY:}
+    buckets:
+      resources: nexora-resources
+    presigned-url-expiry: 15m
+    max-resource-size: 20971520
