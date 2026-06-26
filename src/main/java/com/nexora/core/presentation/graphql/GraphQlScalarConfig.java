@@ -21,6 +21,8 @@ public class GraphQlScalarConfig {
 
     @Bean
     RuntimeWiringConfigurer runtimeWiringConfigurer() {
+        
+        // 1. Tu escalar existente para DateTime
         GraphQLScalarType dateTimeScalar = GraphQLScalarType.newScalar()
                 .name("DateTime")
                 .description("ISO-8601 OffsetDateTime")
@@ -71,6 +73,28 @@ public class GraphQlScalarConfig {
                 })
                 .build();
 
-        return builder -> builder.scalar(dateTimeScalar);
+        // 2. El nuevo escalar para Upload (Dummy para la Fase 5)
+        GraphQLScalarType uploadScalar = GraphQLScalarType.newScalar()
+                .name("Upload")
+                .description("Escalar personalizado para subida de archivos")
+                .coercing(new Coercing<Object, Object>() {
+                    @Override
+                    public Object serialize(Object dataFetcherResult) {
+                        return dataFetcherResult;
+                    }
+                    @Override
+                    public Object parseValue(Object input) {
+                        return input;
+                    }
+                    @Override
+                    public Object parseLiteral(Object input) {
+                        return input;
+                    }
+                }).build();
+
+        // 3. Registramos AMBOS escalares en el mismo builder
+        return builder -> builder
+                .scalar(dateTimeScalar)
+                .scalar(uploadScalar);
     }
 }

@@ -1,4 +1,4 @@
-package com.nexora.core.presentation.graphql;
+package com.nexora.core.graphql;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
