@@ -8,6 +8,7 @@ import com.nexora.core.infrastructure.persistence.content.repositories.AcademicR
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,7 +35,6 @@ public class AcademicResourcePersistenceAdapter implements AcademicResourceRepos
                 .downloadCount(resource.getDownloadCount() != null ? resource.getDownloadCount() : 0)
                 .build();
         
-        // Asignamos el ID heredado usando el setter
         if (resource.getId() != null) {
             entity.setId(resource.getId());
         }
@@ -46,5 +46,28 @@ public class AcademicResourcePersistenceAdapter implements AcademicResourceRepos
     @Override
     public Optional<AcademicResource> findById(UUID id) {
         return repository.findById(id).map(AcademicResourceMapper::toDomain);
+    }
+
+    @Override
+    public Optional<AcademicResource> findByIdNotDeleted(UUID id) {
+        return repository.findByIdAndDeletedAtIsNull(id).map(AcademicResourceMapper::toDomain);
+    }
+
+    @Override
+    public List<AcademicResource> findAll(UUID careerId, UUID categoryId, String type, UUID authorId, Double minRating, int limit, int offset) {
+        return repository.findAllFiltered(careerId, categoryId, type, authorId, minRating)
+                .stream()
+                .skip(offset)
+                .limit(limit)
+                .map(AcademicResourceMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<AcademicResource> findAllByIds(List<UUID> ids) {
+        if (ids.isEmpty()) return List.of();
+        return repository.findByIdIn(ids).stream()
+                .map(AcademicResourceMapper::toDomain)
+                .toList();
     }
 }

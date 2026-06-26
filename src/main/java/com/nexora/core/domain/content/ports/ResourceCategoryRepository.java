@@ -10,6 +10,7 @@ public interface ResourceCategoryRepository {
     Optional<ResourceCategory> findById(UUID id);
     List<ResourceCategory> findAll();
     List<ResourceCategory> findAllByCareerId(UUID careerId);
+    List<ResourceCategory> findAllByIds(List<UUID> ids);
     void deleteById(UUID id);
     boolean existsByCareerIdAndName(UUID careerId, String name);
     boolean existsByCareerIdAndNameAndIdNot(UUID careerId, String name, UUID id);

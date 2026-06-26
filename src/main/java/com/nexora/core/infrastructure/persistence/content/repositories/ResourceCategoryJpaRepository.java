@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public interface ResourceCategoryJpaRepository extends JpaRepository<ResourceCategoryJpaEntity, UUID> {
     List<ResourceCategoryJpaEntity> findAllByCarreraIdOrderByNameAsc(UUID carreraId);
+    List<ResourceCategoryJpaEntity> findByIdIn(List<UUID> ids);
     boolean existsByCarreraIdAndNameIgnoreCase(UUID carreraId, String name);
     boolean existsByCarreraIdAndNameIgnoreCaseAndIdNot(UUID carreraId, String name, UUID id);
 }

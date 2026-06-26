@@ -59,6 +59,14 @@ public class ResourceCategoryPersistenceAdapter implements ResourceCategoryRepos
     }
 
     @Override
+    public List<ResourceCategory> findAllByIds(List<UUID> ids) {
+        if (ids.isEmpty()) return List.of();
+        return repository.findByIdIn(ids).stream()
+                .map(ResourceCategoryMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public boolean existsByCareerIdAndNameAndIdNot(UUID careerId, String name, UUID id) {
         return repository.existsByCarreraIdAndNameIgnoreCaseAndIdNot(careerId, name, id);
     }
