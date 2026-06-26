@@ -11,4 +11,5 @@ public interface AcademicResourceRepository {
     Optional<AcademicResource> findByIdNotDeleted(UUID id);
     List<AcademicResource> findAll(UUID careerId, UUID categoryId, String type, UUID authorId, Double minRating, int limit, int offset);
     List<AcademicResource> findAllByIds(List<UUID> ids);
+    List<AcademicResource> findAllByAuthorId(UUID authorId, int limit, int offset);
 }

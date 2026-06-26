@@ -29,4 +29,10 @@ public interface AcademicResourceJpaRepository extends JpaRepository<AcademicRes
             @Param("minRating") Double minRating);
 
     List<AcademicResourceJpaEntity> findByIdIn(List<UUID> ids);
+
+    @Query("SELECT r FROM AcademicResourceJpaEntity r " +
+           "LEFT JOIN FETCH r.category c " +
+           "WHERE r.authorId = :authorId " +
+           "ORDER BY r.createdAt DESC")
+    List<AcademicResourceJpaEntity> findAllByAuthorId(@Param("authorId") UUID authorId);
 }

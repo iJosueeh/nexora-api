@@ -70,4 +70,14 @@ public class AcademicResourcePersistenceAdapter implements AcademicResourceRepos
                 .map(AcademicResourceMapper::toDomain)
                 .toList();
     }
+
+    @Override
+    public List<AcademicResource> findAllByAuthorId(UUID authorId, int limit, int offset) {
+        return repository.findAllByAuthorId(authorId)
+                .stream()
+                .skip(offset)
+                .limit(limit)
+                .map(AcademicResourceMapper::toDomain)
+                .toList();
+    }
 }

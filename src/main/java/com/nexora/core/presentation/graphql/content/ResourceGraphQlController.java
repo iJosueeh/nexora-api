@@ -16,9 +16,12 @@ import com.nexora.core.application.content.dto.FeedAuthorView;
 import com.nexora.core.application.content.usecases.resources.queries.GetResourceCategoriesUseCase;
 import com.nexora.core.application.content.usecases.resources.queries.GetResourcesUseCase;
 import com.nexora.core.application.content.usecases.resources.queries.GetResourceByIdUseCase;
+import com.nexora.core.application.content.usecases.resources.queries.GetMyResourcesUseCase;
 import com.nexora.core.application.content.usecases.resources.commands.CreateResourceCategoryUseCase;
 import com.nexora.core.application.content.usecases.resources.commands.UpdateResourceCategoryUseCase;
 import com.nexora.core.application.content.usecases.resources.commands.DeleteResourceCategoryUseCase;
+import com.nexora.core.application.content.usecases.resources.commands.UpdateResourceUseCase;
+import com.nexora.core.application.content.usecases.resources.commands.DeleteResourceUseCase;
 import com.nexora.core.domain.content.aggregates.AcademicResource;
 import com.nexora.core.domain.content.aggregates.ResourceCategory;
 import com.nexora.core.domain.content.ports.ResourceCategoryRepository;
@@ -34,9 +37,12 @@ public class ResourceGraphQlController {
     private final GetResourceCategoriesUseCase getResourceCategoriesUseCase;
     private final GetResourcesUseCase getResourcesUseCase;
     private final GetResourceByIdUseCase getResourceByIdUseCase;
+    private final GetMyResourcesUseCase getMyResourcesUseCase;
     private final CreateResourceCategoryUseCase createResourceCategoryUseCase;
     private final UpdateResourceCategoryUseCase updateResourceCategoryUseCase;
     private final DeleteResourceCategoryUseCase deleteResourceCategoryUseCase;
+    private final UpdateResourceUseCase updateResourceUseCase;
+    private final DeleteResourceUseCase deleteResourceUseCase;
     private final ProfileRepository profileRepository;
     private final ResourceCategoryRepository resourceCategoryRepository;
 
@@ -66,6 +72,12 @@ public class ResourceGraphQlController {
                 .orElseThrow(() -> new RuntimeException("Resource not found"));
     }
 
+    @QueryMapping
+    @PreAuthorize("isAuthenticated()")
+    public List<AcademicResource> myResources(@Argument int limit, @Argument int offset) {
+        return getMyResourcesUseCase.execute(limit, offset);
+    }
+
     @MutationMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResourceCategoryView createResourceCategory(@Argument String name, @Argument UUID careerId) {
@@ -84,6 +96,23 @@ public class ResourceGraphQlController {
     @PreAuthorize("hasRole('ADMIN')")
     public Boolean deleteResourceCategory(@Argument UUID id) {
         return deleteResourceCategoryUseCase.execute(id);
+    }
+
+    @MutationMapping
+    @PreAuthorize("isAuthenticated()")
+    public AcademicResource updateResource(
+            @Argument UUID id,
+            @Argument String title,
+            @Argument String description,
+            @Argument UUID categoryId,
+            @Argument String type) {
+        return updateResourceUseCase.execute(id, title, description, categoryId, type);
+    }
+
+    @MutationMapping
+    @PreAuthorize("isAuthenticated()")
+    public Boolean deleteResource(@Argument UUID id) {
+        return deleteResourceUseCase.execute(id);
     }
 
     @BatchMapping(typeName = "AcademicResource", field = "author")
