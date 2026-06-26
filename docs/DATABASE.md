@@ -22,6 +22,9 @@
 | `bookmarks` | Posts guardados | Usuarios guardan posts para ver después. Unique(user_id, post_id). | FK a `usuarios` y `posts` |
 | `study_groups` | Grupos de estudio | Grupos con nombre, descripción, categoría, privacidad, límite de miembros. | FK a `usuarios` (creador) |
 | `group_memberships` | Membresías de grupos | Usuarios en grupos con rol (MEMBER, MODERATOR, OWNER) y estado (APPROVED, PENDING). | FK a `study_groups` y `usuarios` |
+| `resource_categories` | Categorías de recursos | Catálogo de categorías para recursos académicos (Guías, Trabajos, etc.). | FK a `carreras` |
+| `academic_resources` | Recursos académicos | Repositorio de recursos: PDFs, documentos, slides. Slug único, metadatos, contadores. | FK a `usuarios` y `resource_categories` |
+| `resource_ratings` | Calificaciones de recursos | Ratings 1-5 de usuarios a recursos. Unique(user_id, resource_id). | FK a `academic_resources` y `usuarios` |
 
 ## Diagrama de relaciones
 
@@ -58,6 +61,10 @@ bookmarks ──> usuarios + posts
 
 study_groups ──> usuarios
 group_memberships ──> study_groups + usuarios
+
+resource_categories ──> carreras
+academic_resources ──> usuarios + resource_categories
+resource_ratings ──> academic_resources + usuarios
 ```
 
 ## Migraciones Flyway
@@ -77,5 +84,7 @@ group_memberships ──> study_groups + usuarios
 | V11 | Full-text search en `posts` (tsvector + GIN + trigger) |
 | V12 | `study_groups` + `group_memberships` |
 | V13 | Full-text search en `university_events` y `research_papers` |
+| V17 | `resource_categories` + `academic_resources` + `resource_ratings` |
+| V18 | Seed data: 5 categorías + 5 recursos académicos de ejemplo |
 
 > **Nota:** Las tablas `posts`, `comentarios`, `perfiles`, `roles`, `facultades`, `carreras`, `intereses_academicos` y `usuarios` se crean fuera de Flyway (esquema base/Supabase). Flyway solo administra tablas complementarias.
