@@ -55,6 +55,9 @@ extend type Mutation {
     updateResource(id: ID!, input: ResourceInput!): AcademicResource!
     deleteResource(id: ID!): Boolean!
     rateResource(resourceId: ID!, rating: Int!): ResourceRating!
+    createResourceCategory(name: String!, careerId: ID!): ResourceCategory!
+    updateResourceCategory(id: ID!, name: String!, careerId: ID): ResourceCategory!
+    deleteResourceCategory(id: ID!): Boolean!
 }
 
 input ResourceInput { 
