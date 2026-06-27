@@ -17,6 +17,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Controller;
 
 import com.nexora.core.application.content.dto.FeedAuthorView;
+import com.nexora.core.application.content.dto.AcademicResourceFilter;
 import com.nexora.core.application.content.usecases.resources.queries.GetResourceCategoriesUseCase;
 import com.nexora.core.application.content.usecases.resources.queries.GetResourcesUseCase;
 import com.nexora.core.application.content.usecases.resources.queries.GetResourceByIdUseCase;
@@ -58,7 +59,7 @@ public class ResourceGraphQlController {
     private final ResourceRatingRepository resourceRatingRepository;
 
     @QueryMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'OFFICIAL')")
+    @PreAuthorize("permitAll()")
     public List<ResourceCategoryView> resourceCategories(@Argument UUID careerId) {
         return getResourceCategoriesUseCase.execute(careerId).stream()
                 .map(c -> new ResourceCategoryView(c.getId(), c.getName(), null))
@@ -69,12 +70,15 @@ public class ResourceGraphQlController {
     public List<AcademicResource> resources(
             @Argument int limit,
             @Argument int offset,
-            @Argument UUID careerId,
-            @Argument UUID categoryId,
-            @Argument String type,
-            @Argument UUID authorId,
-            @Argument Double minRating) {
-        return getResourcesUseCase.execute(careerId, categoryId, type, authorId, minRating, limit, offset);
+            @Argument AcademicResourceFilter filter) {
+        return getResourcesUseCase.execute(
+                filter != null ? filter.careerId() : null,
+                filter != null ? filter.categoryId() : null,
+                filter != null ? filter.type() : null,
+                filter != null ? filter.authorId() : null,
+                filter != null ? filter.minRating() : null,
+                limit,
+                offset);
     }
 
     @QueryMapping

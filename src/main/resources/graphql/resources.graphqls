@@ -21,7 +21,7 @@ type AcademicResource {
 type ResourceCategory {
     id: ID!
     name: String!
-    career: Course!
+    career: Course
 }
 
 type ResourceRating {

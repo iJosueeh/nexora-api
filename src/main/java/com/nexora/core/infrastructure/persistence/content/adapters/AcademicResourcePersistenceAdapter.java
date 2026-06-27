@@ -3,8 +3,10 @@ package com.nexora.core.infrastructure.persistence.content.adapters;
 import com.nexora.core.domain.content.aggregates.AcademicResource;
 import com.nexora.core.domain.content.ports.AcademicResourceRepository;
 import com.nexora.core.infrastructure.persistence.content.entities.AcademicResourceJpaEntity;
+import com.nexora.core.infrastructure.persistence.content.entities.ResourceCategoryJpaEntity;
 import com.nexora.core.infrastructure.persistence.content.mappers.AcademicResourceMapper;
 import com.nexora.core.infrastructure.persistence.content.repositories.AcademicResourceJpaRepository;
+import com.nexora.core.infrastructure.persistence.content.repositories.ResourceCategoryJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -17,15 +19,20 @@ import java.util.UUID;
 public class AcademicResourcePersistenceAdapter implements AcademicResourceRepository {
 
     private final AcademicResourceJpaRepository repository;
+    private final ResourceCategoryJpaRepository categoryRepository;
 
     @SuppressWarnings("null")
     @Override
     public AcademicResource save(AcademicResource resource) {
+        ResourceCategoryJpaEntity category = categoryRepository.findById(resource.getCategoryId())
+                .orElseThrow(() -> new RuntimeException("Category not found: " + resource.getCategoryId()));
+
         AcademicResourceJpaEntity entity = AcademicResourceJpaEntity.builder()
                 .slug(resource.getSlug())
                 .title(resource.getTitle())
                 .description(resource.getDescription())
                 .type(resource.getType())
+                .category(category)
                 .authorId(resource.getAuthorId())
                 .fileUrl(resource.getFileUrl())
                 .fileSize(resource.getFileSize())

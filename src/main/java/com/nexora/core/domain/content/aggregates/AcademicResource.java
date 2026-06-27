@@ -21,5 +21,7 @@ public class AcademicResource {
     private final Double averageRating;
     private final Integer ratingsCount;
     private final Integer downloadCount;
+    private final OffsetDateTime createdAt;
+    private final OffsetDateTime updatedAt;
     private final OffsetDateTime deletedAt;
 }
