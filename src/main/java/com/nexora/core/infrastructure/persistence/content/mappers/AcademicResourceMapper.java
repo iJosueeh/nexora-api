@@ -20,6 +20,8 @@ public class AcademicResourceMapper {
                 .averageRating(entity.getAverageRating())
                 .ratingsCount(entity.getRatingsCount())
                 .downloadCount(entity.getDownloadCount())
+                .createdAt(entity.getCreatedAt() != null ? entity.getCreatedAt().atOffset(java.time.ZoneOffset.UTC) : null)
+                .updatedAt(entity.getUpdatedAt() != null ? entity.getUpdatedAt().atOffset(java.time.ZoneOffset.UTC) : null)
                 .deletedAt(entity.getDeletedAt())
                 .build();
     }

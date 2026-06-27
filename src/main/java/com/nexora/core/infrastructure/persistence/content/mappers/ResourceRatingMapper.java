@@ -10,6 +10,7 @@ public class ResourceRatingMapper {
                 .resourceId(entity.getResource().getId())
                 .userId(entity.getUserId())
                 .rating(entity.getRating())
+                .createdAt(entity.getCreatedAt() != null ? entity.getCreatedAt().atOffset(java.time.ZoneOffset.UTC) : null)
                 .build();
     }
 }

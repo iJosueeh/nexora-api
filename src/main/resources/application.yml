@@ -88,6 +88,6 @@ app:
     access-key: ${STORAGE_ACCESS_KEY:}
     secret-key: ${STORAGE_SECRET_KEY:}
     buckets:
-      resources: nexora-resources
+      resources: nexora-recursos
     presigned-url-expiry: 15m
     max-resource-size: 20971520

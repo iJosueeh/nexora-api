@@ -7,8 +7,6 @@ import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,7 +18,6 @@ import java.util.UUID;
 public class SupabaseStorageAdapter implements FileStoragePort {
 
     private final S3Client s3Client;
-    private final S3Presigner s3Presigner;
     private final StorageProperties storageProperties;
 
     @Override
@@ -48,14 +45,10 @@ public class SupabaseStorageAdapter implements FileStoragePort {
 
     @Override
     public String generatePresignedDownloadUrl(String bucket, String key, Duration expiry) {
-        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                .signatureDuration(expiry)
-                .getObjectRequest(builder -> builder
-                        .bucket(bucket)
-                        .key(key))
-                .build();
-
-        return s3Presigner.presignGetObject(presignRequest).url().toString();
+        // Supabase Storage public URL format (bucket is public)
+        String baseEndpoint = storageProperties.getEndpoint()
+                .replace("/storage/v1/s3", "/storage/v1/object/public");
+        return baseEndpoint + "/" + bucket + "/" + key;
     }
 
     public String generateResourceKey(UUID authorId, String filename) {
