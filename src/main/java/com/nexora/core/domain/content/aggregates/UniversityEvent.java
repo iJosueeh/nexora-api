@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -22,7 +23,7 @@ public class UniversityEvent extends DomainModel {
     private String slug;
     private String title;
     private String description;
-    private String date;
+    private OffsetDateTime date;
     private String location;
     private String category;
     private String image;
@@ -30,7 +31,7 @@ public class UniversityEvent extends DomainModel {
     private CommunityLinks communityLinks;
     private List<UUID> attendeeIds;
 
-    public static UniversityEvent create(String slug, String title, String description, String date,
+    public static UniversityEvent create(String slug, String title, String description, OffsetDateTime date,
                                          String location, String category, String image,
                                          Organizer organizer, CommunityLinks communityLinks) {
         if (slug == null || slug.isBlank()) {

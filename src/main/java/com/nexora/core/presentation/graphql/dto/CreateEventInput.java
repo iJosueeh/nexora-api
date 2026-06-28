@@ -1,11 +1,12 @@
 package com.nexora.core.presentation.graphql.dto;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public record CreateEventInput(
         String title,
         String description,
-        String date,
+        OffsetDateTime date,
         String location,
         String category,
         String image,

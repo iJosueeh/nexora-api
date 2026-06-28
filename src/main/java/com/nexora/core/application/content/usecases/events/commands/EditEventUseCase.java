@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Service
@@ -18,7 +19,7 @@ public class EditEventUseCase {
     private final EventRepository eventRepository;
 
     public UniversityEvent execute(UUID eventId, String title, String description,
-                                    String date, String location, String category,
+                                    OffsetDateTime date, String location, String category,
                                     String image, String organizerName, String organizerRole,
                                     String whatsapp, String telegram, String discord) {
         UniversityEvent event = eventRepository.findById(eventId)
@@ -27,10 +28,10 @@ public class EditEventUseCase {
         if (title != null && !title.isBlank()) {
             event.setTitle(title.trim());
         }
-        if (description != null) {
+        if (description != null && !description.isBlank()) {
             event.setDescription(description);
         }
-        if (date != null && !date.isBlank()) {
+        if (date != null) {
             event.setDate(date);
         }
         if (location != null) {

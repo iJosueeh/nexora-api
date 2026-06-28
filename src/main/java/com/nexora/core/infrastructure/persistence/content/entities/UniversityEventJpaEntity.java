@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,7 +32,7 @@ public class UniversityEventJpaEntity extends AuditableJpaEntity {
     private String description;
 
     @Column(name = "event_date", nullable = false)
-    private String date;
+    private OffsetDateTime date;
 
     @Column(name = "location", nullable = false)
     private String location;

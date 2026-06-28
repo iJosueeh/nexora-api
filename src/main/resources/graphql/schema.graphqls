@@ -235,7 +235,7 @@ input UpdatePublicationInput {
 input CreateEventInput {
   title: String!
   description: String
-  date: String!
+  date: DateTime!
   location: String
   category: String
   image: String
@@ -249,7 +249,7 @@ input CreateEventInput {
 input UpdateEventInput {
   title: String
   description: String
-  date: String
+  date: DateTime
   location: String
   category: String
   image: String
