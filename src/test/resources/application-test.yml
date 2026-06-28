@@ -22,6 +22,11 @@ spring:
         jwt:
           issuer-uri: http://localhost/auth/v1
 
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
 jwt:
   secret: test-secret-key-for-jwt-signing-test-secret-key-12345
   refresh-secret: test-refresh-secret-key-for-jwt-signing-1234567
@@ -31,6 +36,17 @@ jwt:
 supabase:
   url: http://localhost
   key: dummy-key
+
+app:
+  storage:
+    endpoint: http://localhost:54321
+    region: sa-east-1
+    access-key: test-access-key
+    secret-key: test-secret-key
+    buckets:
+      resources: test-resources
+    presigned-url-expiry: 15m
+    max-resource-size: 20971520
 
 logging:
   level:

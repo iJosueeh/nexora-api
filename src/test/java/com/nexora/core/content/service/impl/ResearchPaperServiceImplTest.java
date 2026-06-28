@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,44 +12,55 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.nexora.core.content.entity.ResearchPaper;
-import com.nexora.core.content.repository.ResearchPaperRepository;
+import com.nexora.core.application.content.usecases.papers.commands.SavePaperUseCase;
+import com.nexora.core.application.content.usecases.papers.commands.IncrementPaperViewsUseCase;
+import com.nexora.core.application.content.usecases.papers.queries.GetPaperBySlugUseCase;
+import com.nexora.core.domain.content.aggregates.ResearchPaper;
+import com.nexora.core.domain.content.repositories.PaperRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ResearchPaperServiceImplTest {
 
     @Mock
-    private ResearchPaperRepository repository;
+    private PaperRepository paperRepository;
+
+    @Mock
+    private GetPaperBySlugUseCase getPaperBySlugUseCase;
+
+    @Mock
+    private SavePaperUseCase savePaperUseCase;
 
     @InjectMocks
-    private ResearchPaperServiceImpl researchService;
+    private IncrementPaperViewsUseCase incrementPaperViewsUseCase;
 
     @Test
     void save_GeneratesSlug() {
-        ResearchPaper paper = new ResearchPaper();
-        paper.setTitle("Optimización de Algoritmos en IA");
-        
-        when(repository.save(any(ResearchPaper.class))).thenAnswer(i -> i.getArguments()[0]);
+        SavePaperUseCase realSaveUseCase = new SavePaperUseCase(paperRepository);
+        ResearchPaper paper = ResearchPaper.create(null, "Optimización de Algoritmos en IA",
+                "Summary", "Facultad", UUID.randomUUID(), null);
 
-        ResearchPaper savedPaper = researchService.save(paper);
+        when(paperRepository.save(any(ResearchPaper.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        ResearchPaper savedPaper = realSaveUseCase.execute(paper);
 
         assertNotNull(savedPaper.getSlug());
         assertEquals("optimizacion-de-algoritmos-en-ia", savedPaper.getSlug());
-        verify(repository, times(1)).save(paper);
+        verify(paperRepository, times(1)).save(paper);
     }
 
     @Test
     void incrementViews_Success() {
         String slug = "test-slug";
-        ResearchPaper paper = new ResearchPaper();
+        UUID authorId = UUID.randomUUID();
+        ResearchPaper paper = ResearchPaper.create(slug, "Title", "Summary", "Facultad", authorId, null);
         paper.setViews(10);
-        
-        when(repository.findBySlug(slug)).thenReturn(Optional.of(paper));
-        when(repository.save(any(ResearchPaper.class))).thenReturn(paper);
 
-        researchService.incrementViews(slug);
+        when(getPaperBySlugUseCase.execute(slug)).thenReturn(Optional.of(paper));
+
+        incrementPaperViewsUseCase.execute(slug);
 
         assertEquals(11, paper.getViews());
-        verify(repository, times(1)).save(paper);
+        verify(getPaperBySlugUseCase, times(1)).execute(slug);
+        verify(savePaperUseCase, times(1)).execute(paper);
     }
 }

@@ -33,4 +33,4 @@ services:
       - key: SUPABASE_KEY
         sync: false
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        value: "https://app.nexora.com"
