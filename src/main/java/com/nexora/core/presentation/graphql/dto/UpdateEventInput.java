@@ -1,9 +1,11 @@
 package com.nexora.core.presentation.graphql.dto;
 
+import java.time.OffsetDateTime;
+
 public record UpdateEventInput(
         String title,
         String description,
-        String date,
+        OffsetDateTime date,
         String location,
         String category,
         String image,

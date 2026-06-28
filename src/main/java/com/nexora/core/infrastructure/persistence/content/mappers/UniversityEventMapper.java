@@ -9,6 +9,7 @@ import com.nexora.core.infrastructure.persistence.content.entities.UniversityEve
 import com.nexora.core.infrastructure.persistence.user.entities.UserJpaEntity;
 import org.springframework.stereotype.Component;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;

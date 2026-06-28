@@ -155,7 +155,7 @@ public class FeedQueryJdbcAdapter {
         String sql = """
                 SELECT
                     p.id AS post_id,
-                    COUNT(DISTINCT l.id) AS likes_count,
+                    COUNT(l.user_id) AS likes_count,
                     COUNT(DISTINCT c.id) AS comments_count,
                     COALESCE(BOOL_OR(l.user_id = :currentUserId), false) AS is_liked
                 FROM posts p
