@@ -37,7 +37,9 @@ public class InvitarMiembroUseCase {
             throw new RuntimeException("Solo el propietario o moderador puede invitar miembros");
         }
 
-        Profile invitedProfile = profileRepository.findByUsername(invitedUsername)
+        Profile invitedProfile = profileRepository.searchByUsername(invitedUsername, 1).stream()
+                .filter(p -> p.getUsername().value().equalsIgnoreCase(invitedUsername))
+                .findFirst()
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + invitedUsername));
 
         UUID invitedUserId = invitedProfile.getUserId();

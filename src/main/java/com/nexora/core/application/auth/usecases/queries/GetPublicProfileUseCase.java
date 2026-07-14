@@ -24,7 +24,9 @@ public class GetPublicProfileUseCase {
     private final FollowRepository followRepository;
 
     public AuthResponse execute(String username, String viewerEmail) {
-        Profile profile = profileRepository.findByUsername(username)
+        Profile profile = profileRepository.searchByUsername(username, 1).stream()
+                .filter(p -> p.getUsername().value().equalsIgnoreCase(username))
+                .findFirst()
                 .orElseThrow(() -> new UsernameNotFoundException("Profile not found"));
 
         User user = userRepository.findById(profile.getUserId())
