@@ -18,10 +18,17 @@ public interface ProfileJpaRepository extends JpaRepository<ProfileJpaEntity, UU
 
     List<ProfileJpaEntity> findByUserIdIn(List<UUID> userIds);
 
-    Optional<ProfileJpaEntity> findByUsernameIgnoreCase(String username);
+    @Query("SELECT p FROM ProfileJpaEntity p WHERE LOWER(p.username) = LOWER(:username)")
+    Optional<ProfileJpaEntity> findByUsernameIgnoreCase(@Param("username") String username);
 
     @Query("SELECT p FROM ProfileJpaEntity p WHERE LOWER(p.username) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<ProfileJpaEntity> searchByUsername(@Param("query") String query, org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT p FROM ProfileJpaEntity p WHERE p.userId NOT IN :excludeIds ORDER BY p.followersCount DESC")
+    List<ProfileJpaEntity> findDiscoverableByUserIdNotIn(@Param("excludeIds") List<UUID> excludeIds, org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT c.name, COUNT(p) FROM ProfileJpaEntity p JOIN p.carrera c GROUP BY c.name ORDER BY COUNT(p) DESC")
+    List<Object[]> countProfilesByCareer();
 
     boolean existsByUserId(UUID userId);
 

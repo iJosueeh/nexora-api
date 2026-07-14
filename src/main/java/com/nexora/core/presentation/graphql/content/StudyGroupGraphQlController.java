@@ -30,6 +30,7 @@ import com.nexora.core.application.content.usecases.studygroups.queries.GetStudy
 import com.nexora.core.application.content.usecases.studygroups.queries.GroupInvitationView;
 import com.nexora.core.application.content.usecases.studygroups.queries.GroupMemberView;
 import com.nexora.core.application.content.usecases.studygroups.queries.PendingMemberView;
+import com.nexora.core.application.content.usecases.studygroups.queries.DiscoverUsersUseCase;
 import com.nexora.core.application.content.usecases.studygroups.queries.SearchUsersUseCase;
 import com.nexora.core.application.content.usecases.studygroups.queries.UserSearchResultView;
 import com.nexora.core.application.security.services.SecurityService;
@@ -64,6 +65,7 @@ public class StudyGroupGraphQlController {
     private final GetGroupInvitationsUseCase getGroupInvitationsUseCase;
     private final GetInvitationsReceivedUseCase getInvitationsReceivedUseCase;
     private final SearchUsersUseCase searchUsersUseCase;
+    private final DiscoverUsersUseCase discoverUsersUseCase;
     private final SecurityService securityService;
 
     @QueryMapping
@@ -168,6 +170,15 @@ public class StudyGroupGraphQlController {
     @QueryMapping
     public List<UserSearchResultView> searchUsers(@Argument String query) {
         return searchUsersUseCase.execute(query);
+    }
+
+    @QueryMapping
+    public List<UserSearchResultView> discoverUsers(@Argument List<UUID> excludeUserIds) {
+        UUID currentUserId = null;
+        try {
+            currentUserId = securityService.getCurrentUserId();
+        } catch (Exception ignored) {}
+        return discoverUsersUseCase.execute(currentUserId, excludeUserIds != null ? excludeUserIds : List.of());
     }
 
     @MutationMapping
