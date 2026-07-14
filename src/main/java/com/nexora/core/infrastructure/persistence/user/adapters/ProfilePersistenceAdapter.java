@@ -46,6 +46,13 @@ public class ProfilePersistenceAdapter implements ProfileRepository {
     }
 
     @Override
+    public List<Profile> findDiscoverableByUserIdNotIn(List<UUID> excludeUserIds, int limit) {
+        return profileJpaRepository.findDiscoverableByUserIdNotIn(excludeUserIds, PageRequest.of(0, limit)).stream()
+                .map(profileMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<Profile> findByUserIdIn(List<UUID> userIds) {
         return profileJpaRepository.findByUserIdIn(userIds).stream()
                 .map(profileMapper::toDomain)

@@ -11,6 +11,7 @@ public interface ProfileRepository {
     Optional<Profile> findByUserId(UUID userId);
     Optional<Profile> findByUsername(String username);
     List<Profile> searchByUsername(String query, int limit);
+    List<Profile> findDiscoverableByUserIdNotIn(List<UUID> excludeUserIds, int limit);
     List<Profile> findByUserIdIn(List<UUID> userIds);
     Profile save(Profile profile);
     void deleteById(UUID id);

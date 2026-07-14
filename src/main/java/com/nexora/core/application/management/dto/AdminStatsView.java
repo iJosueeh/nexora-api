@@ -11,4 +11,23 @@ public class AdminStatsView {
     private int totalPosts;
     private int activeEvents;
     private List<RecentActivityView> recentActivity;
+    @Builder.Default
+    private List<GrowthPoint> userGrowth = List.of();
+    @Builder.Default
+    private List<DistributionPoint> careerDistribution = List.of();
+
+    @Data
+    @Builder
+    public static class GrowthPoint {
+        private String label;
+        private int value;
+    }
+
+    @Data
+    @Builder
+    public static class DistributionPoint {
+        private String category;
+        private int count;
+        private double percentage;
+    }
 }

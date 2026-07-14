@@ -47,6 +47,7 @@ type Query {
   groupInvitations(groupId: ID!): [GroupInvitation!]!
   invitationsReceived(status: String): [GroupInvitation!]!
   searchUsers(query: String!): [UserSearchResult!]!
+  discoverUsers(excludeUserIds: [ID!]): [UserSearchResult!]!
 
   # Catálogos
   faculties: [Faculty!]!
@@ -59,6 +60,19 @@ type AdminStats {
   totalPosts: Int!
   activeEvents: Int!
   recentActivity: [RecentActivity!]!
+  userGrowth: [GrowthPoint!]!
+  careerDistribution: [DistributionPoint!]!
+}
+
+type GrowthPoint {
+  label: String!
+  value: Int!
+}
+
+type DistributionPoint {
+  category: String!
+  count: Int!
+  percentage: Float!
 }
 
 type RecentActivity {
