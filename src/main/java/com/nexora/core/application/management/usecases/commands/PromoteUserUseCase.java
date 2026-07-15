@@ -1,49 +1,32 @@
-package com.nexora.core.application.management.usecases.queries;
+package com.nexora.core.application.management.usecases.commands;
 
 import com.nexora.core.application.auth.dto.ProfileView;
 import com.nexora.core.domain.user.aggregates.Profile;
 import com.nexora.core.domain.user.aggregates.User;
 import com.nexora.core.domain.user.repositories.ProfileRepository;
 import com.nexora.core.domain.user.repositories.UserRepository;
+import com.nexora.core.domain.user.valueobjects.UserRole;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class GetAllUsersUseCase {
+@Transactional
+public class PromoteUserUseCase {
 
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
 
-    public List<ProfileView> execute(int limit, int offset, String search) {
-        PageRequest pageRequest = PageRequest.of(offset / limit, limit);
-
-        List<User> users;
-        if (search != null && !search.isEmpty()) {
-            // Primero buscar por username en Profile
-            var profiles = profileRepository.searchByUsername(search, limit);
-            if (!profiles.isEmpty()) {
-                List<UUID> userIds = profiles.stream().map(Profile::getUserId).toList();
-                users = userRepository.findAllById(userIds);
-            } else {
-                // Fallback: buscar por email en User
-                users = userRepository.findByEmailContainingIgnoreCase(search, pageRequest).getContent();
-            }
-        } else {
-            users = userRepository.findAll(pageRequest).getContent();
-        }
-
-        return users.stream()
-                .map(this::mapToProfileView)
-                .collect(Collectors.toList());
+    public ProfileView execute(UUID userId, UserRole newRole) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
+        user.changeRole(newRole);
+        User savedUser = userRepository.save(user);
+        return mapToProfileView(savedUser);
     }
 
     private ProfileView mapToProfileView(User user) {
