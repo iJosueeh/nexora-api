@@ -1,5 +1,11 @@
 scalar DateTime
 
+enum UserRole {
+  ROLE_ADMIN
+  ROLE_OFFICIAL
+  ROLE_STUDENT
+}
+
 type Query {
   health: String!
   obtenerFeedPrincipal(limit: Int = 20, offset: Int = 0): [FeedPost!]!
@@ -131,6 +137,7 @@ type Mutation {
 
   # Gestión Administrativa
   updateUserStatus(userId: ID!, isActive: Boolean!): Profile!
+  promoteUser(userId: ID!, role: UserRole!): Profile!
   markPostAsOfficial(postId: ID!, isOfficial: Boolean!): FeedPost!
   deletePost(postId: ID!): Boolean!
   updateProfileAdmin(userId: ID!, input: UpdateProfileInput!): Profile!
