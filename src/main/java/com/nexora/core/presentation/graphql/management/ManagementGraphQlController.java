@@ -23,6 +23,8 @@ import com.nexora.core.domain.content.aggregates.Post;
 import com.nexora.core.application.content.dto.FeedAuthorView;
 import com.nexora.core.domain.user.aggregates.Profile;
 import com.nexora.core.domain.user.repositories.ProfileRepository;
+import com.nexora.core.application.management.usecases.commands.PromoteUserUseCase;
+import com.nexora.core.domain.user.valueobjects.UserRole;
 import com.nexora.core.infrastructure.persistence.user.entities.AcademicInterestJpaEntity;
 import com.nexora.core.infrastructure.persistence.user.entities.CourseJpaEntity;
 import com.nexora.core.infrastructure.persistence.user.entities.FacultyJpaEntity;
@@ -37,6 +39,7 @@ public class ManagementGraphQlController {
     private final GetAdminStatsUseCase getAdminStatsUseCase;
     private final GetAllUsersUseCase getAllUsersUseCase;
     private final UpdateUserStatusUseCase updateUserStatusUseCase;
+    private final PromoteUserUseCase promoteUserUseCase;
     private final UpdateProfileAdminUseCase updateProfileAdminUseCase;
     private final MarkPostAsOfficialUseCase markPostAsOfficialUseCase;
     private final DeletePostUseCase deletePostUseCase;
@@ -62,6 +65,12 @@ public class ManagementGraphQlController {
     @PreAuthorize("hasRole('ADMIN')")
     public ProfileView updateUserStatus(@Argument UUID userId, @Argument Boolean isActive) {
         return updateUserStatusUseCase.execute(userId, isActive);
+    }
+
+    @MutationMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ProfileView promoteUser(@Argument UUID userId, @Argument UserRole role) {
+        return promoteUserUseCase.execute(userId, role);
     }
 
     @MutationMapping
